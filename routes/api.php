@@ -135,7 +135,7 @@ Route::group([
     Route::get('/historyBrowsing/Detail/{id}', 'StaffController@HistoryBrowsingDetail');
     Route::post('/historyBrowsing/Create', 'StaffController@HistoryBrowsingCreate');
     Route::get('/testdo/{id}', 'StaffController@todol');
-    Route::get('/testdo/v2/{cato}', 'StaffController@TestClientFields');
+    Route::post('/testdo/v2/', 'StaffController@TestClientFields');
     //end route for maps 
 
     //check statgov 

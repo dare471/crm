@@ -236,7 +236,7 @@ class StaffController extends Controller
             return response()->json([
                 'success' => true,
                 'status' => 201,
-                'headers' => $query_2,
+                'headers' => $query_2[0],
                 'data' => $query
             ]);
         }
@@ -324,7 +324,7 @@ class StaffController extends Controller
             return response()->json([
                 'success' => true,
                 'status' => 201,
-                'headers' => $query_2,
+                'headers' => $query_2[0],
                 'data' => $query
             ]);
         }
@@ -354,7 +354,7 @@ class StaffController extends Controller
 
         return response()->json([
             'success' => true,
-            'headers' => $query_2,
+            'headers' => $query_2[0],
             'data' => $query
             
         ]);
@@ -447,7 +447,7 @@ class StaffController extends Controller
         return response()->json([
             'success' => true,
             'status' => 201,
-            'headers' => $query_2,
+            'headers' => $query_2[0],
             'data' => $query
         ]);
     }
@@ -462,11 +462,11 @@ class StaffController extends Controller
             ,[FIELDS] as fields
             ,[CLIENT_INFO_ID] as client_info_id
             ,CONVERT(NVARCHAR(max), CCIG.GUID, 1) guid
-            ,CCI.NAME as name
-            ,CCI.ADDRESS as address
-            ,CCI.CATO as cato
+            ,CASE 
+                WHEN CCIG.GUID IS NOT NULL THEN '1'
+                WHEN CCIG.GUID IS NULL THEN NULL
+            END AS guid
             ,CCR.COORDINATES as geometry_rings
-            ,[TYPE] as type_area
             ,[CULTURE] as culture
             ,CONCAT([AREA]/10000,  ' Га') as area 
         FROM [CRM_DWH].[dbo].[CRM_CLIENT_PROPERTIES] AS CCR
@@ -483,7 +483,7 @@ class StaffController extends Controller
         return response()->json([
             'success' => true,
             'status' => 201,
-            'headers' => $query_2,
+            'headers' => $query_2[0],
             'data' => $query
         ]);
     }
@@ -518,7 +518,7 @@ class StaffController extends Controller
         return response()->json([
             'success' => true,
             'status' => 201,
-            'headers' => $query_2,
+            'headers' => $query_2[0],
             'data' => $query
         ]);
     }
@@ -563,7 +563,7 @@ class StaffController extends Controller
            $data = array("type" => "clientFieldCulture", 
                 "nameCult" => $geom->nameCult, 
                 "fieldsCultureId" =>$geom->client_info_id,
-                "geometry_rings" => $narray
+                "geometry_rings" => implode(",", $pieces)
             );
             array_push($nnarray, $data);
         }
@@ -574,29 +574,29 @@ class StaffController extends Controller
             'data' => $nnarray
         ]);
     }
-    public function TestClientFields($cato) {
+    public function TestClientFields(Request $request) {
+        $request->year;
+        $request->provider;
+        $request->region;
 
-        $region = substr($cato, 0, 2);
-        $district = substr($cato, 2, 4);
-       
         $dbconn = DB::connection('CRM_DWH');
-        $query =  $dbconn->select("SELECT  'clientFields' as type
-        ,NAME as name
-        ,ID as client_info_id
-        ,COORDINATES 
-            FROM [CRM_DWH].[dbo].[CRM_CLIENT_INFO]  cci
-            WHERE REGION = '$cato'
-        ");
-
-        $query1 =  $dbconn->select("SELECT  
-            COORDINATES 
-            FROM [CRM_DWH].[dbo].[CRM_CLIENT_INFO]  cci
-            WHERE REGION = '$cato'
-            FOR XML RAW ('COORDINATES');
-        ");  
-
+        $query = $dbconn->select("SELECT 
+        csc.NAME,
+        CSS.PROVIDER_NAME,
+        CSS.REGION,
+            SUM(SUM_SUBSIDIES) as SUM_SUBSID,
+            SUM(AREA) as AREA_SUBS,
+            SUM(CSS.VOLUME) as VOLUME,
+            CSS.UNIT,
+            SUM(ROUND(USAGE_AREA, 0)) as USAGE_AREA
+        FROM CRM_SHYMBULAK_SEEDS CSS
+        LEFT JOIN CRM_CLIENT_INFO cci ON cci.IIN_BIN = CSS.APPLICANT_IIN_BIN
+        LEFT JOIN CRM_CLIENT_PROPERTIES ccp ON ccp.CLIENT_INFO_ID = cci.ID 
+        LEFT JOIN CRM_SPR_CULTURE csc on csc.ID = ccp.CULTURE 
+        WHERE CSS.[YEAR] IN ('$request->year') AND [SOURCE] = 1 
+        group by csc.NAME,PROVIDER_NAME,CSS.UNIT, CSS.REGION
+        order by SUM_SUBSID DESC");
         return Response($query);
-
     }
 
     ///api for search client name for maps
