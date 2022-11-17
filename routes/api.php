@@ -36,9 +36,6 @@ Route::group([
     //POWERBi REPORTS END POINT
 
     //callculator
-    Route::get('/product_own', 'ProductOwnController@all');
-    Route::post('/product_own/update/{id}', 'ProductOwnController@update');
-
     Route::get('calculator_kp', 'CalculatorKPController@all');
     Route::get('/calculator_kp/cult', 'CalculatorKPController@cult_all');
     Route::get('/calculator_kp/pest_t', 'CalculatorKPController@pesticides_types');
@@ -49,19 +46,12 @@ Route::group([
     Route::get('/calculator_kp/filter_prod/{name}/', 'CalculatorKPController@name_c');
     Route::get('/calculator_kp/filter_prod_t/{name_c}', 'CalculatorKPController@name_p');
     Route::get('/calculator_kp/filter_prod_j/', 'CalculatorKPController@joint');
-
     Route::get('/calculator_kp/{user_id}', 'CalculatorKPController@showID');
     Route::post('/calculator_kp/create', 'CalculatorKPController@create');
     Route::post('/calculator_kp/update/{id}', 'CalculatorKPController@update');
     Route::delete('/calculator_kp/delete/{id}', 'CalculatorKPController@delete');
 
     //end calculator/
-    // client add/
-    Route::post('/add/client', 'ClientController@show_all_order');
-    //
-    //client route//
-    Route::get('/client/order_all/{id}', 'ClientController@add');
-    //end client route
 
     //staff route
     Route::get('/staff/dashboard/revenue/{iin}', 'StaffController@staff_sales_order');
@@ -73,28 +63,17 @@ Route::group([
     //
 
     //parser contactlist
-    Route::get('/semena/all', 'MapsDataController@semena');
-    Route::post('/semena/changedlist', 'MapsDataController@semena_wr');
     Route::get('/user/photo/{iin}', 'ContactListController@user_photo');
     Route::get('/parser/', 'ParserController@pars');
     Route::post('/parser_list', 'ParserController@eldala');
     Route::get('/parser_list2', 'ParserController@eldaladetail');
     Route::get('/parser_list/margin', 'ParserController@margin');
     //end contactlist
+   
     //DoGovor
-
     Route::post('/dg','UtilXMLController@dg');
     Route::post('/dg_p','UtilXMLController@dg_guid');
-
     //end dg
-
-    //PRODUCTS SEARCH ROW NAME LIKE
-    Route::get('/product/{name}', 'ProductController@product_search');
-    //END PRODUCY SEARCH 
-    ///adress search row name like
-    Route::get('/adress/{name}', 'ProductController@adress_search');
-    ///END 
-
 
     //coordintae to 1c 
     Route::post('/maps/coordinate_receive', 'UtilXMLController@coordinate_to_from'); 
@@ -125,7 +104,7 @@ Route::group([
     Route::post('/clientDistrictFields/','StaffController@clientDistrictFields'); /// ----
     Route::get('/getCultureSpr/{region}', 'StaffController@GetCultureSpr');
     Route::post('/filterFields','StaffController@FilterClientFields');
-    Route::get('/clientPolygons/{guid}', 'StaffController@ClientGuid');
+    // // Route::get('/clientPolygons/{guid}', 'StaffController@ClientGuid');
     Route::get('/clientFieldsCult/{id}', 'StaffController@ClientGroupCulture');//---
     Route::post('/getClientFieldsCult', 'StaffController@ClientFieldGuid'); ///----
     Route::get('/clientPolygon/{id}', 'StaffController@PolygonDetail');
@@ -134,13 +113,16 @@ Route::group([
     Route::get('/historyBrowsing/List/{user_id}', 'StaffController@HistoryBrowsingList');
     Route::get('/historyBrowsing/Detail/{id}', 'StaffController@HistoryBrowsingDetail');
     Route::post('/historyBrowsing/Create', 'StaffController@HistoryBrowsingCreate');
-    Route::get('/testdo/{id}', 'StaffController@todol');
-    Route::post('/testdo/v2/', 'StaffController@TestClientFields');
     //end route for maps 
 
-    //check statgov 
-    Route::get('/statgor', 'StaffController@CheckClient');
-    //end 
+    // Route FOR TESTING !!!
+    Route::get('/testdo/{id}', 'StaffController@todol');
+    Route::post('/testdo/v2/', 'StaffController@TestClientFields');
+    //END
+
+    //Route v2 for Maps 
+    Route::post("/country/v2/", "MapsController@MainController");
+    //
 
     //api for web
     Route::get('/contracts/{user_id}', 'StaffController@ListOrders');
@@ -156,45 +138,6 @@ Route::group([
     Route::post('/comment/delete', 'StaffController@DeleteCommentContent');
     Route::post('/comment/list', 'StaffController@ListCommentContent');
     //end api for web 
-    //maps 
-    
-    Route::get('/maps/coordinate_marker/{cato}', 'GeoController@show_district'); 
-
-    Route::get('/aisgzk/{id}', 'GeoController@aisgzk');
-
-    Route::get('/maps/coordinate_marker_longi/', 'UtilXMLController@coordinate_f_ele'); 
-
-    Route::get('/maps/coordinate_marker_route','GeoController@router_order');
-
-    Route::get('/maps/today_order/{name}','GeoController@todayorder');
-    
-    Route::get('/maps/coordinate_marker_route/guid/{guid}','GeoController@router_client');
-
-    Route::get('/maps/list/warehouse','GeoController@warehouse_aa');
-    
-    Route::get('/maps/list/warehouse/{guid}','GeoController@warehouse_to');
-
-    Route::get('/maps/coordinate_marker_other', 'GeoController@show_all_other'); 
-
-    Route::get('/maps/store_coord/', 'CoordinatesController@store_coord'); // store_coord
-
-    Route::get('/maps/detail_client/{iin}/{date}', 'GeoController@detail_client');    
-
-    Route::get('/maps/manager_region/{cato}', 'GeoController@manager_region');
-
-    Route::post('/maps/manager_region/', 'GeoController@manager_filter');
-
-    Route::get('/maps/manager_region/', 'GeoController@list_data');
-
-    Route::get('/maps/cato_active/{kato_id}', 'GeoController@active_region');
-
-    Route::get('/maps_data/{id}', 'MapsDataController@showID');
-
-    Route::get('/coordinates', 'CoordinatesController@all');
-
-    Route::get('/coordinates_warehouse', 'CoordinatesController@coordinate_warehouse');
-
-    Route::get('/coord', 'CoordinatesController@coord');
 
 //user controller
     Route::get('/user/{server_name}&pswd={pswd}', 'UserController@index');
@@ -218,16 +161,4 @@ Route::group([
     //выводить список заявок по компании на расходники, доделать с кодировкой проблемы
     Route::get('/list_order', 'TasksController@task_status');
     
-
-//опросник
-    Route::get('survey', 'SurveyController@all');
-    Route::get('/survey/{id}', 'SurveyController@showID');
-    Route::post('/survey/create/', 'SurveyController@create');
-    Route::post('/survey/update/{id}', 'SurveyController@update');
-    Route::delete('/survey/delete/{id}', 'SurveyController@delete');
-
-//зп
-    Route::post('/wage/seep_d', 'MapsDataController@wage_d_s');
-    Route::post('/wage/seep_s', 'MapsDataController@wage_s');
-
 });

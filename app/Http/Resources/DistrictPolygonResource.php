@@ -4,7 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class ProductOwnResource extends JsonResource
+class DistrictPolygonResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -14,6 +14,13 @@ class ProductOwnResource extends JsonResource
      */
     public function toArray($request)
     {
-        return parent::toArray($request);
+        return [
+            'type' => $this->type,
+            'name' => $this->TEXT,
+            'klkod' => $this->KLKOD,
+            'vnaim' => $this->VNAIM,
+            'cato' =>  $this->cato,
+            'geometry_rings' => json_decode($this->geometry_rings, true),
+        ];
     }
 }

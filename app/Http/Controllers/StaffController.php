@@ -114,7 +114,7 @@ class StaffController extends Controller
         $subquery = "";
       }
       $dbconn = DB::connection('CRM_DWH');
-      $query =  $dbconn->select("SELECT  'clientFields' as type, CCR.[ID] as id
+      $query =  $dbconn->select("SELECT  'clientLand' as type, CCR.[ID] as id
           ,CASE 
             	WHEN CCIG.GUID IS NULL THEN ''
             	WHEN CCIG.GUID IS NOT NULL THEN '1'
@@ -210,7 +210,7 @@ class StaffController extends Controller
             $subquery2 = '';
         }
         $dbconn = DB::connection('CRM_DWH');
-        $query =  $dbconn->select("SELECT  'clientFields' as type, CCR.[ID] as id
+        $query =  $dbconn->select("SELECT  'clientLand' as type, CCR.[ID] as id
             ,CONVERT(NVARCHAR(max), CCIG.GUID, 1) guid
             ,CCI.NAME as name
             ,[CLIENT_INFO_ID] as client_info_id
@@ -330,7 +330,7 @@ class StaffController extends Controller
         }
     }
 
-    //Deleted ? 
+   
     public function District($kat_f)
     {
         $dbconn = DB::connection('CRM_DWH');
@@ -392,72 +392,121 @@ class StaffController extends Controller
     {
         $dbconn = DB::connection('CRM_DWH');
         $query = $dbconn->select("
-        SELECT CCR.[ID] as id
-        ,[FIELDS] as fields
-        ,[CLIENT_INFO_ID] as client_info_id
-        ,CCI.NAME as name
-        ,CCI.ADDRESS as address
-        ,CCI.CATO as cato
-        ,CCR.COORDINATES as geometry_rings
-        ,[TYPE] as type
-        ,[KADASTR] as kadastr
-        ,[AREA] as area
-    FROM [CRM_DWH].[dbo].[CRM_CLIENT_PROPERTIES] AS CCR
-    LEFT JOIN [CRM_DWH].[dbo].[CRM_CLIENT_INFO] AS CCI ON CCI.ID=CCR.CLIENT_INFO_ID
-    LEFT JOIN [CRM_DWH].[dbo].[CRM_CLIENT_ID_GUID] AS CCIG ON CCIG.ID=CCI.CLIENT_ID
-    WHERE CCR.[ID] = '$id'
-    ");
-        return response()->json([
-            'success' => true,
-            'status' => 201,
-            'data' => $query
-        ]);
-    }
-    ///end refactor 
-    
-    //spr cult ClientFieldGuid 
-    public function ClientGroupCulture($id)
-    {
-        $dbconn = DB::connection('CRM_DWH');
-        $query = $dbconn->select("
-        SELECT 'clientFieldCulture' as type,
-            CSC.NAME as nameCult,
-            CULTURE as fieldsCultureId,
-            CCR.CLIENT_INFO_ID as client_info_id
-            ,geometry_rings=(SELECT STRING_AGG(COORDINATES, ',')  FROM [CRM_DWH].[dbo].[CRM_CLIENT_PROPERTIES] CCP WHERE CCP.CLIENT_INFO_ID =CCR.CLIENT_INFO_ID AND CCP.CULTURE =CCR.CULTURE)
+        SELECT 'clientFieldsAll' as type 
+            ,CCR.[ID] as id 
+            ,[FIELDS] as fields
+            ,[CLIENT_INFO_ID] as client_info_id
+            ,CASE 
+            	WHEN CCIG.GUID IS NULL THEN NULL
+            	WHEN CCIG.GUID IS NOT NULL THEN 1
+            END as guid
+            ,CCR.COORDINATES as geometry_rings
+            ,[AREA]/10000 as area
         FROM [CRM_DWH].[dbo].[CRM_CLIENT_PROPERTIES] AS CCR
             LEFT JOIN [CRM_DWH].[dbo].[CRM_CLIENT_INFO] AS CCI ON CCI.ID=CCR.CLIENT_INFO_ID
             LEFT JOIN [CRM_DWH].[dbo].[CRM_CLIENT_ID_GUID] AS CCIG ON CCIG.ID=CCI.CLIENT_ID
-            LEFT JOIN [CRM_DWH].[dbo].[CRM_SPR_CULTURE] AS CSC ON CSC.ID = CCR.CULTURE
-            WHERE CLIENT_INFO_ID = $id AND SOURCE=1
-        GROUP BY 
-            CULTURE,
-            CSC.NAME,
-            CCR.CLIENT_INFO_ID
-        ");
-        $query_2 = $dbconn->select("
-        SELECT SUM(AREA)/10000 as area_g, 
-            COUNT(*) as count_fields,
-            cci.NAME as name,
-            cci.ADDRESS as address
-        FROM [CRM_DWH].[dbo].[CRM_CLIENT_PROPERTIES] AS CCR
-        LEFT JOIN CRM_CLIENT_INFO cci ON cci.ID = CCR.CLIENT_INFO_ID  
-            WHERE CLIENT_INFO_ID  = '$id' AND SOURCE=1 GROUP BY cci.NAME,
-            cci.ADDRESS");
+            WHERE CLIENT_INFO_ID = $id
+    ");
+
+        $arr = json_decode($query[0]->geometry_rings, true);
+
         return response()->json([
             'success' => true,
             'status' => 201,
-            'headers' => $query_2[0],
+            'geo' => $arr,
             'data' => $query
         ]);
     }
 
-    //new version ClientFieldGuid
+
+    //Route:: /clientFieldsCult/ || Method:: GET
+    public function ClientGroupCulture(Request $request, $id)
+    {    
+        $dbconn = DB::connection('CRM_DWH');
+        if($request->type == "allFields"){
+            $query = $dbconn->select("
+            SELECT 'clientLand' as type 
+            ,CCR.[ID] as id 
+            ,[FIELDS] as fields
+            ,[CLIENT_INFO_ID] as client_info_id
+            ,CASE 
+                WHEN CCIG.GUID IS NULL THEN NULL
+                WHEN CCIG.GUID IS NOT NULL THEN 1
+            END as guid
+            ,CCR.COORDINATES as geometry_rings
+            ,[AREA]/10000 as area
+        FROM [CRM_DWH].[dbo].[CRM_CLIENT_PROPERTIES] AS CCR
+            LEFT JOIN [CRM_DWH].[dbo].[CRM_CLIENT_INFO] AS CCI ON CCI.ID=CCR.CLIENT_INFO_ID
+            LEFT JOIN [CRM_DWH].[dbo].[CRM_CLIENT_ID_GUID] AS CCIG ON CCIG.ID=CCI.CLIENT_ID
+            WHERE CLIENT_INFO_ID = '$id'
+            ");
+            return response()->json([
+                'success' => true,
+                'status' => 201,
+                'data' => $query
+            ]);
+        }
+        if($request->type == "cultures"){
+            $query = $dbconn->select("
+            SELECT 'clientFieldCulture' as type,
+                CSC.NAME as nameCult,
+                CULTURE as fieldsCultureId,
+                CCR.CLIENT_INFO_ID as client_info_id,
+                CSC.COLOR as color,
+                CCR.CLIENT_INFO_ID as client_info_id
+                ,geometry_rings=(SELECT STRING_AGG(COORDINATES, ' || ')  FROM [CRM_DWH].[dbo].[CRM_CLIENT_PROPERTIES] CCP WHERE CCP.CLIENT_INFO_ID =CCR.CLIENT_INFO_ID AND CCP.CULTURE =CCR.CULTURE)
+            FROM [CRM_DWH].[dbo].[CRM_CLIENT_PROPERTIES] AS CCR
+                LEFT JOIN [CRM_DWH].[dbo].[CRM_CLIENT_INFO] AS CCI ON CCI.ID=CCR.CLIENT_INFO_ID
+                LEFT JOIN [CRM_DWH].[dbo].[CRM_CLIENT_ID_GUID] AS CCIG ON CCIG.ID=CCI.CLIENT_ID
+                LEFT JOIN [CRM_DWH].[dbo].[CRM_SPR_CULTURE] AS CSC ON CSC.ID = CCR.CULTURE
+                WHERE CLIENT_INFO_ID = $id AND SOURCE=1
+            GROUP BY 
+                CULTURE,
+                CSC.NAME,
+                CSC.COLOR,
+                CCR.CLIENT_INFO_ID
+            ");
+            $query_2 = $dbconn->select("
+            SELECT SUM(AREA)/10000 as area_g, 
+                COUNT(*) as count_fields,
+                cci.NAME as name,
+                cci.ADDRESS as address
+            FROM [CRM_DWH].[dbo].[CRM_CLIENT_PROPERTIES] AS CCR
+            LEFT JOIN CRM_CLIENT_INFO cci ON cci.ID = CCR.CLIENT_INFO_ID  
+                WHERE CCR.CLIENT_INFO_ID  = '$id' AND SOURCE=1 GROUP BY cci.NAME,
+                cci.ADDRESS");
+            
+            $nnarray = [];
+    
+            foreach($query as $geom){
+                $array_geo = explode(" || ", $geom->geometry_rings);
+                $serialize = json_decode($array_geo[0]);
+                $data = array(
+                    "type" => "clientFieldCulture", 
+                    "nameCult" => $geom->nameCult, 
+                    "fieldsCultureId" =>$geom->fieldsCultureId,
+                    "client_info_id" => $geom->client_info_id,
+                    "color" => $geom->color,
+                    "geometry_rings" => $serialize
+                );
+                array_push($nnarray, $data);
+            }
+            return response()->json([
+                'success' => true,
+                'status' => 201,
+                'headers' => $query_2[0],
+                'data' => $nnarray
+            ]);
+        }
+       
+    }
+
+    //Route:: /getClientFieldsCult/ || Method:: POST
     public function ClientFieldGuid(Request $request)
     {
         $dbconn = DB::connection('CRM_DWH');
         $query = $dbconn->select("
-        SELECT 'clientField' as type 
+        SELECT 'clientLandPlot' as type 
             ,CCR.[ID] as id 
             ,[FIELDS] as fields
             ,[CLIENT_INFO_ID] as client_info_id
@@ -487,42 +536,9 @@ class StaffController extends Controller
             'data' => $query
         ]);
     }
-    //old version ClientGuid
-    public function ClientGuid($guid)
-    {
-        $dbconn = DB::connection('CRM_DWH');
-        $query = $dbconn->select("
-        SELECT 'clientPolygon' as type 
-            ,CCR.[ID] as id 
-            ,[FIELDS] as fields
-            ,[CLIENT_INFO_ID] as client_info_id
-            ,CONVERT(NVARCHAR(max), CCIG.GUID, 1) guid
-            ,CCI.NAME as name
-            ,CCI.ADDRESS as address
-            ,CCI.CATO as cato
-            ,CCR.COORDINATES as geometry_rings
-            ,[TYPE] as type_area
-            ,[KADASTR] as kadastr
-            ,[AREA]/10000 as area
-        FROM [CRM_DWH].[dbo].[CRM_CLIENT_PROPERTIES] AS CCR
-            LEFT JOIN [CRM_DWH].[dbo].[CRM_CLIENT_INFO] AS CCI ON CCI.ID=CCR.CLIENT_INFO_ID
-            LEFT JOIN [CRM_DWH].[dbo].[CRM_CLIENT_ID_GUID] AS CCIG ON CCIG.ID=CCI.CLIENT_ID
-            WHERE CLIENT_INFO_ID = '$guid'
-        ");
-        $query_2 = $dbconn->select("
-        SELECT SUM(AREA)/10000 as area_g, 
-            COUNT(*) as count_fields
-        FROM [CRM_DWH].[dbo].[CRM_CLIENT_PROPERTIES] AS CCR
-        LEFT JOIN CRM_CLIENT_INFO cci ON cci.CLIENT_ID = CCR.CLIENT_INFO_ID  
-            WHERE cci.CLIENT_ID  = '$guid';");
-        return response()->json([
-            'success' => true,
-            'status' => 201,
-            'headers' => $query_2[0],
-            'data' => $query
-        ]);
-    }
-///end refactor maps
+
+
+//{ TEST API  }
     public function todol($id){
 
         $dbconn = DB::connection('CRM_DWH');
@@ -530,6 +546,8 @@ class StaffController extends Controller
         SELECT 'clientFieldCulture' as type,
             CSC.NAME as nameCult,
             CULTURE as fieldsCultureId,
+            CCR.CLIENT_INFO_ID as client_info_id,
+            CSC.COLOR as color,
             CCR.CLIENT_INFO_ID as client_info_id
             ,geometry_rings=(SELECT STRING_AGG(COORDINATES, ' || ')  FROM [CRM_DWH].[dbo].[CRM_CLIENT_PROPERTIES] CCP WHERE CCP.CLIENT_INFO_ID =CCR.CLIENT_INFO_ID AND CCP.CULTURE =CCR.CULTURE)
         FROM [CRM_DWH].[dbo].[CRM_CLIENT_PROPERTIES] AS CCR
@@ -540,6 +558,7 @@ class StaffController extends Controller
         GROUP BY 
             CULTURE,
             CSC.NAME,
+            CSC.COLOR,
             CCR.CLIENT_INFO_ID
         ");
         $query_2 = $dbconn->select("
@@ -553,17 +572,17 @@ class StaffController extends Controller
             cci.ADDRESS");
         
         $nnarray = [];
-        $i = 0;
+
         foreach($query as $geom){
-            $pieces = explode(" || ", $geom->geometry_rings);
-            
-            $arry = ['[[', ']]'];
-            $narray = str_replace($arry, '', $pieces);
-          
-           $data = array("type" => "clientFieldCulture", 
+            $array_geo = explode(" || ", $geom->geometry_rings);
+            $serialize = json_decode($array_geo[0]);
+            $data = array(
+                "type" => "clientFieldCulture", 
                 "nameCult" => $geom->nameCult, 
-                "fieldsCultureId" =>$geom->client_info_id,
-                "geometry_rings" => implode(",", $pieces)
+                "fieldsCultureId" =>$geom->fieldsCultureId,
+                "client_info_id" => $geom->client_info_id,
+                "color" => $geom->color,
+                "geometry_rings" => $serialize
             );
             array_push($nnarray, $data);
         }
@@ -573,6 +592,7 @@ class StaffController extends Controller
             'headers' => $query_2[0],
             'data' => $nnarray
         ]);
+
     }
     public function TestClientFields(Request $request) {
         $request->year;
@@ -598,6 +618,9 @@ class StaffController extends Controller
         order by SUM_SUBSID DESC");
         return Response($query);
     }
+    ///{ TEST API }
+
+
 
     ///api for search client name for maps
     public function FindClientName($iin)
@@ -1054,7 +1077,47 @@ class StaffController extends Controller
 
 
 
-// api for list Contracts
+// // api for list Contracts
+// public function ListOrders($user_id)
+// {
+//     $dbconn = DB::connection('CRM_DWH');
+//     $query = $dbconn->table("CRM_CLIENT_ID_GUID as ccig")
+//     ->leftjoin("CRM_DOGOVOR as cd", "cd.KONTRAGENT_GUID", "ccig.GUID")
+//     ->leftjoin("CRM_USERS as CU", "CU.GUID", "CD.MENEDZHER_GUID")
+//     ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.CLIENT_ID", "ccig.ID")
+//     ->select(
+//         DB::raw("CONVERT(NVARCHAR(MAX), CD.GUID, 1) AS CONTRACTS_GUID"),
+//         "CU.ID AS MANAGER_ID",
+//         "CU.NAIMENOVANIE AS MANAGER_NAME",
+//         "CU.DIREKTSYA",
+//         "CU.DOLZHNOST",
+//         "CCIG.ID AS KONTRAGENT_ID", 
+//         "CD.KONTRAGENT AS KONTRAGENT_NAME",
+//         "CD.NAIMENOVANIE",
+//         "CCI.IIN_BIN AS KONTRAGENT_IIN",
+//         "SEZON AS SEASON",
+//         "CD.USLOVIYA_OPLATY",
+//         "CD.SPOSOB_DOSTAVKI",
+//         "CD.ADRES_DOSTAVKI",
+//         "CD.SUMMA_KZ_TG")
+//     ->where("CU.ID", $user_id)
+//     ->where("cd.OSNOVNOY_DOGOVOR", '')
+//     ->whereIn("SEZON", ["Сезон 2021", "Сезон 2022"])
+//     ->paginate(20);
+//     if ($query) {
+//         return response()->json([
+//             'success' => true,
+//             'status' => 201,
+//             'data' => $query
+//         ]);
+//     } else {
+//         return response()->json([
+//             'success' => false,
+//             'status' => 201,
+//             'data' => 'Data not found'
+//         ]);
+//     }
+// }
     public function ListOrders($user_id)
     {
         $dbconn = DB::connection('CRM_DWH');

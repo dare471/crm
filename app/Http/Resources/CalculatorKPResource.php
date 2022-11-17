@@ -14,9 +14,16 @@ class CalculatorKPResource extends JsonResource
      */
     public function toArray($request)
     {
+        
         return /* parent::toArray($request); */ [
-            'id'=>$this->id,
-            'body'=>json_decode($this->body)
+            'id' =>  $this->ID,
+            'type' => $this->type,
+            'guid' => $this->guid,
+            'name' => $this->name,
+            'client_info_id' => $this->client_info_id,
+            'geometry_rings' => json_decode($this->geometry_rings, true)
         ];
     }
 }
+
+
