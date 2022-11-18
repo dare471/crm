@@ -105,7 +105,7 @@ Route::group([
     Route::get('/getCultureSpr/{region}', 'StaffController@GetCultureSpr');
     Route::post('/filterFields','StaffController@FilterClientFields');
     // // Route::get('/clientPolygons/{guid}', 'StaffController@ClientGuid');
-    Route::get('/clientFieldsCult/{id}', 'StaffController@ClientGroupCulture');//---
+    Route::post('/clientFieldsCult', 'StaffController@ClientGroupCulture');//---
     Route::post('/getClientFieldsCult', 'StaffController@ClientFieldGuid'); ///----
     Route::get('/clientPolygon/{id}', 'StaffController@PolygonDetail');
     Route::get('/clientField/{id}', 'StaffController@FieldsDetail'); /// ----
@@ -122,6 +122,7 @@ Route::group([
 
     //Route v2 for Maps 
     Route::post("/country/v2/", "MapsController@MainController");
+    Route::post("/clientFields/v2/", "MapsController@MapsClient");
     //
 
     //api for web

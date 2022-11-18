@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Facade\FlareClient\Http\Response;
 use Illuminate\Http\Request;
-
+use App\Http\Resources\ClientsFieldsPolygonResource;
 use Illuminate\Support\Facades\DB;
 
 class StaffController extends Controller
@@ -420,7 +420,7 @@ class StaffController extends Controller
 
 
     //Route:: /clientFieldsCult/ || Method:: GET
-    public function ClientGroupCulture(Request $request, $id)
+    public function ClientGroupCulture(Request $request)
     {    
         $dbconn = DB::connection('CRM_DWH');
         if($request->type == "allFields"){
@@ -438,7 +438,7 @@ class StaffController extends Controller
         FROM [CRM_DWH].[dbo].[CRM_CLIENT_PROPERTIES] AS CCR
             LEFT JOIN [CRM_DWH].[dbo].[CRM_CLIENT_INFO] AS CCI ON CCI.ID=CCR.CLIENT_INFO_ID
             LEFT JOIN [CRM_DWH].[dbo].[CRM_CLIENT_ID_GUID] AS CCIG ON CCIG.ID=CCI.CLIENT_ID
-            WHERE CLIENT_INFO_ID = '$id'
+            WHERE CLIENT_INFO_ID = '$request->id'
             ");
             return response()->json([
                 'success' => true,
@@ -452,19 +452,15 @@ class StaffController extends Controller
                 CSC.NAME as nameCult,
                 CULTURE as fieldsCultureId,
                 CCR.CLIENT_INFO_ID as client_info_id,
+                CCR.ID as fieldsID,
                 CSC.COLOR as color,
-                CCR.CLIENT_INFO_ID as client_info_id
-                ,geometry_rings=(SELECT STRING_AGG(COORDINATES, ' || ')  FROM [CRM_DWH].[dbo].[CRM_CLIENT_PROPERTIES] CCP WHERE CCP.CLIENT_INFO_ID =CCR.CLIENT_INFO_ID AND CCP.CULTURE =CCR.CULTURE)
+                CCR.CLIENT_INFO_ID as client_info_id,
+                CCR.COORDINATES as geometry_rings
             FROM [CRM_DWH].[dbo].[CRM_CLIENT_PROPERTIES] AS CCR
                 LEFT JOIN [CRM_DWH].[dbo].[CRM_CLIENT_INFO] AS CCI ON CCI.ID=CCR.CLIENT_INFO_ID
                 LEFT JOIN [CRM_DWH].[dbo].[CRM_CLIENT_ID_GUID] AS CCIG ON CCIG.ID=CCI.CLIENT_ID
                 LEFT JOIN [CRM_DWH].[dbo].[CRM_SPR_CULTURE] AS CSC ON CSC.ID = CCR.CULTURE
-                WHERE CLIENT_INFO_ID = $id AND SOURCE=1
-            GROUP BY 
-                CULTURE,
-                CSC.NAME,
-                CSC.COLOR,
-                CCR.CLIENT_INFO_ID
+                WHERE CLIENT_INFO_ID = $request->id AND SOURCE=1
             ");
             $query_2 = $dbconn->select("
             SELECT SUM(AREA)/10000 as area_g, 
@@ -473,32 +469,23 @@ class StaffController extends Controller
                 cci.ADDRESS as address
             FROM [CRM_DWH].[dbo].[CRM_CLIENT_PROPERTIES] AS CCR
             LEFT JOIN CRM_CLIENT_INFO cci ON cci.ID = CCR.CLIENT_INFO_ID  
-                WHERE CCR.CLIENT_INFO_ID  = '$id' AND SOURCE=1 GROUP BY cci.NAME,
+                WHERE CCR.CLIENT_INFO_ID  = '$request->id' AND SOURCE=1 GROUP BY cci.NAME,
                 cci.ADDRESS");
             
-            $nnarray = [];
-    
-            foreach($query as $geom){
-                $array_geo = explode(" || ", $geom->geometry_rings);
-                $serialize = json_decode($array_geo[0]);
-                $data = array(
-                    "type" => "clientFieldCulture", 
-                    "nameCult" => $geom->nameCult, 
-                    "fieldsCultureId" =>$geom->fieldsCultureId,
-                    "client_info_id" => $geom->client_info_id,
-                    "color" => $geom->color,
-                    "geometry_rings" => $serialize
-                );
-                array_push($nnarray, $data);
-            }
             return response()->json([
-                'success' => true,
-                'status' => 201,
-                'headers' => $query_2[0],
-                'data' => $nnarray
-            ]);
+                    'success' => true,
+                    'status' => 201,
+                    'headers'=> $query_2[0],
+                    'data' => $query
+                    ///'data' => ClientsFieldsPolygonResource::collection($query)
+                ]);
         }
-       
+       else{
+        return response()->json([
+                'success' => false,
+                'status' => 201
+            ]);
+       }
     }
 
     //Route:: /getClientFieldsCult/ || Method:: POST
