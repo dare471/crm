@@ -35,23 +35,6 @@ Route::group([
     Route::get('/topmanager', 'AnalysesController@topmanager');
     //POWERBi REPORTS END POINT
 
-    //callculator
-    Route::get('calculator_kp', 'CalculatorKPController@all');
-    Route::get('/calculator_kp/cult', 'CalculatorKPController@cult_all');
-    Route::get('/calculator_kp/pest_t', 'CalculatorKPController@pesticides_types');
-    Route::get('/calculator_kp/pest_t', 'CalculatorKPController@pesticides_types');
-    Route::get('/calculator_kp/pest_f/{id}', 'CalculatorKPController@pesticides_f');
-    Route::get('/calculator_kp/object/', 'CalculatorKPController@object_v');
-    Route::get('/calculator_kp/season/', 'CalculatorKPController@season');
-    Route::get('/calculator_kp/filter_prod/{name}/', 'CalculatorKPController@name_c');
-    Route::get('/calculator_kp/filter_prod_t/{name_c}', 'CalculatorKPController@name_p');
-    Route::get('/calculator_kp/filter_prod_j/', 'CalculatorKPController@joint');
-    Route::get('/calculator_kp/{user_id}', 'CalculatorKPController@showID');
-    Route::post('/calculator_kp/create', 'CalculatorKPController@create');
-    Route::post('/calculator_kp/update/{id}', 'CalculatorKPController@update');
-    Route::delete('/calculator_kp/delete/{id}', 'CalculatorKPController@delete');
-
-    //end calculator/
 
     //staff route
     Route::get('/staff/dashboard/revenue/{iin}', 'StaffController@staff_sales_order');
@@ -61,20 +44,7 @@ Route::group([
     Route::get('/staff/contract/{iin}', 'StaffController@staff_contracts');
     Route::get('/staff/contract/dop/count/{guid}', 'StaffController@contracts_count');
     //
-
-    //parser contactlist
-    Route::get('/user/photo/{iin}', 'ContactListController@user_photo');
-    Route::get('/parser/', 'ParserController@pars');
-    Route::post('/parser_list', 'ParserController@eldala');
-    Route::get('/parser_list2', 'ParserController@eldaladetail');
-    Route::get('/parser_list/margin', 'ParserController@margin');
-    //end contactlist
    
-    //DoGovor
-    Route::post('/dg','UtilXMLController@dg');
-    Route::post('/dg_p','UtilXMLController@dg_guid');
-    //end dg
-
     //coordintae to 1c 
     Route::post('/maps/coordinate_receive', 'UtilXMLController@coordinate_to_from'); 
 
@@ -110,9 +80,6 @@ Route::group([
     Route::get('/clientPolygon/{id}', 'StaffController@PolygonDetail');
     Route::get('/clientField/{id}', 'StaffController@FieldsDetail'); /// ----
     Route::get('/usersmigration', 'StaffController@Migrationalluser');
-    Route::get('/historyBrowsing/List/{user_id}', 'StaffController@HistoryBrowsingList');
-    Route::get('/historyBrowsing/Detail/{id}', 'StaffController@HistoryBrowsingDetail');
-    Route::post('/historyBrowsing/Create', 'StaffController@HistoryBrowsingCreate');
     //end route for maps 
 
     // Route FOR TESTING !!!
@@ -126,7 +93,7 @@ Route::group([
     Route::post("/filter", "MapsController@FilterForMaps");
     Route::post("/history/maps", "HistoryBrowsingController@HistoryBrowsing");
     Route::post("/analytics", "AnalyticsController@AnalyticsMaps");
-    //
+    //END
 
     //api for web
     Route::get('/contracts/{user_id}', 'StaffController@ListOrders');
@@ -141,7 +108,7 @@ Route::group([
     Route::post('/comment/update', 'StaffController@UpdateCommentContent');
     Route::post('/comment/delete', 'StaffController@DeleteCommentContent');
     Route::post('/comment/list', 'StaffController@ListCommentContent');
-    //end api for web 
+    //END
 
 //user controller
     Route::get('/user/{server_name}&pswd={pswd}', 'UserController@index');
@@ -155,14 +122,5 @@ Route::group([
     Route::post('/journal/create', 'DocumentCController@created_j');
     Route::post('/journal/list', 'DocumentCController@list_j');
     Route::get('/journal/list_category', 'DocumentCController@list_category');
-
-//task manager
-    Route::get('tasks', 'TasksController@all');
-    Route::get('/tasks/{id}', 'TasksController@showID');
-    Route::post('/tasks/create/', 'TasksController@create');
-    Route::post('/tasks/update/{id}', 'TasksController@update');
-    Route::delete('/tasks/delete/{id}', 'TasksController@delete');
-    //выводить список заявок по компании на расходники, доделать с кодировкой проблемы
-    Route::get('/list_order', 'TasksController@task_status');
     
 });

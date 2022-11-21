@@ -49,12 +49,7 @@ class AnalysesController extends Controller
         ]);
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+  
     public function showID($id)
     {
         $analyses = Analyses::where('provider', 'like', "{$id}%")->get(); //join('geos', 'geos.owner', '=', 'contragents.IIN_BIN')->
