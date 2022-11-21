@@ -123,6 +123,9 @@ Route::group([
     //Route v2 for Maps 
     Route::post("/country/v2/", "MapsController@MainController");
     Route::post("/clientFields/v2/", "MapsController@MapsClient");
+    Route::post("/filter", "MapsController@FilterForMaps");
+    Route::post("/history/maps", "HistoryBrowsingController@HistoryBrowsing");
+    Route::post("/analytics", "AnalyticsController@AnalyticsMaps");
     //
 
     //api for web
