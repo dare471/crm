@@ -248,7 +248,7 @@ class StaffController extends Controller
         $query = $dbconn->select("SELECT CSC.ID, CSC.NAME  FROM [CRM_DWH].[dbo].[CRM_SPR_CULTURE] CSC
         LEFT JOIN CRM_DWH.dbo.CRM_CLIENT_PROPERTIES ccp ON ccp.CULTURE = CSC.ID 
         LEFT JOIN CRM_DWH.dbo.CRM_CLIENT_INFO cci ON cci.ID = ccp.CLIENT_INFO_ID
-        WHERE cci.REGION = $region GROUP BY CSC.ID, CSC.NAME");
+        WHERE cci.DISTRICT = $region GROUP BY CSC.ID, CSC.NAME");
         if(empty($query)){
             return response()->json([
                 'succes' => false,
@@ -448,7 +448,7 @@ class StaffController extends Controller
         }
         if($request->type == "cultures"){
             $query = $dbconn->select("
-            SELECT 'clientFieldCulture' as type,
+            SELECT 'clientLandCulture' as type,
                 CSC.NAME as nameCult,
                 CULTURE as fieldsCultureId,
                 CCR.CLIENT_INFO_ID as client_info_id,

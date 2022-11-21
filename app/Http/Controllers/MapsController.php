@@ -10,11 +10,15 @@ use App\Http\Resources\RegionPolygonResource;
 use App\Http\Resources\DistrictPolygonResource;
 use App\Http\Resources\ClientsFieldsPolygonResource;
 use App\Http\Resources\ClientFieldsPolygonResource;
-use App\HTTP\Resources\ElevatorListResource;
-use App\HTTP\Resources\CultureRegionResource;
+use App\Http\Resources\ElevatorListResource;
+use App\Http\Resources\CultureRegionResource;
+use App\Http\Resources\FilterMaps;
+use App\Http\Resources\FilterSprCultMaps;
 
 class MapsController extends Controller
 {
+
+//* Контроллер для первых слоей на карте Область и Районы
     public function MainController(Request $request)
     {
         if($request->type=='region'){
@@ -121,8 +125,11 @@ class MapsController extends Controller
             ]);
         }
     }
+//* Конец функции
 
+//* Вывод участков клиентов
     public function MapsClient(Request $request){
+
         if($request->type == 'allFields'){
             $query = DB::table("CRM_CLIENT_PROPERTIES as CCR")
             ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCR.CLIENT_INFO_ID")
@@ -156,6 +163,7 @@ class MapsController extends Controller
             ->get();
             $response = ClientFieldsPolygonResource::collection($query);
         }
+
         if($request->type == 'cultures'){
             $query = DB::table("CRM_CLIENT_PROPERTIES as CCR")
             ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCR.CLIENT_INFO_ID")
@@ -172,6 +180,7 @@ class MapsController extends Controller
             ->where("SOURCE", "1")
             ->groupby("CSC.NAME", "CULTURE", "CCR.CLIENT_INFO_ID", "CSC.COLOR")
             ->get();
+            $response = ClientsFieldsPolygonResource::collection($query);
 
             $headers = DB::table("CRM_CLIENT_PROPERTIES as CCR")
             ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCR.CLIENT_INFO_ID")
@@ -182,8 +191,9 @@ class MapsController extends Controller
             ->where("CCR.CLIENT_INFO_ID", $request->clientID)
             ->groupBy("CCI.NAME", "CCI.ADDRESS")
             ->get();
-            $response = ClientsFieldsPolygonResource::collection($query);
+            //$response = ClientsFieldsPolygonResource::collection($query);
         }
+
         if($request->type == 'getFieldsCulture'){
             $query = DB::table("CRM_CLIENT_PROPERTIES as CCR")
             ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCR.CLIENT_INFO_ID")
@@ -222,21 +232,52 @@ class MapsController extends Controller
                 'data' => $response
             ]);
         }
+//*Конец функции 
+
+//* ФИЛЬТР участков под критерий  
         public function FilterForMaps(Request $request){
-            if($request->type == "filterInn"){
-                $query = DB::table("CRM_CLIENT_INFO as CCI")
-                ->leftjoin("CRM_CLIENT_PROPERTIES as CCR", "CCR.CLIENT_INFO_ID", "CCI.ID")
+                if($request->type == "sprCult"){
+                    $query = DB::table("CRM_SPR_CULTURE as CSC")
+                    ->leftjoin("CRM_CLIENT_PROPERTIES as CCR", "CCR.CULTURE", "CSC.ID")
+                    ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCR.CLIENT_INFO_ID")
+                    ->select(
+                        "CSC.ID as id",
+                        "CSC.NAME as nameCult"
+                        )
+                    ->where("CCI.DISTRICT", $request->district)
+                    ->groupBy("CSC.ID", "CSC.NAME");
+                    $response = FilterSprCultMaps::collection($query->get());
+                }
+                if($request->type == "filterMain"){
+                $query = DB::table("CRM_CLIENT_PROPERTIES as CCR")
+                ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCR.CLIENT_INFO_ID")
                 ->leftjoin("CRM_CLIENT_ID_GUID as CCIG", "CCIG.ID", "CCI.CLIENT_ID")
+                ->leftjoin("CRM_SPR_CULTURE as CSC", "CSC.ID", "CCR.CULTURE")
                 ->select(
-                    "CCR.ID", 
-                    DB::raw("CONVERT(NVARCHAR(max), CCIG.GUID, 1) as guid"), 
-                    "CLIENT_ID", 
-                    "NAME", 
-                    "IIN_BIN")
-                ->where("IIN_BIN", "LIKE", "$request->iin%")
-                ->where("SOURCE", 1)
-                ->get();
-                $response = $query;
+                    DB::raw("'clientLands' as type"), 
+                    "CCR.ID as fieldsID", 
+                    "CLIENT_INFO_ID as clientID", 
+                    "CCI.NAME as clientName",
+                    "CCI.IIN_BIN",
+                    DB::raw("CASE WHEN CCIG.GUID IS NULL THEN NULL WHEN CCIG.GUID IS NOT NULL THEN '1' END as guid"), 
+                    "CCR.CULTURE as cultureID", 
+                    "CSC.NAME as cultureName",
+                    "CCI.DISTRICT as district",
+                    "CCI.REGION as region",
+                    "CCR.COORDINATES as geometry_rings"
+                );
+                if($request->cato){
+                    $region = substr($request->cato, 0, 2);
+                    $district = substr($request->cato, 2, 4);
+                    $query->where("CCI.DISTRICT", "66");
+                }
+                if($request->cult){
+                    $query->whereIn("CCR.CULTURE", $request->cult);
+                }
+                if($request->clientInn){
+                    $query->where("CCI.IIN_BIN", "LIKE", "$request->clientInn%");
+                }        
+                $response = FilterMaps::collection($query->get());
             }
             return response()->json([
                 'success' => true,
@@ -244,6 +285,8 @@ class MapsController extends Controller
                 'data' => $response
             ]);
         }
+//* Конец функции
 }
+               
 
 
