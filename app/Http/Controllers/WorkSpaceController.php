@@ -40,8 +40,8 @@ class WorkSpaceController extends Controller
          ,@PODTVERZHDENIE= $request->confirmation");
          return response()->json(['status' => true, 'message' => 'success', 'data'=> $query], 200);
       }
-      if($request->type == "elevatorSelect"){
-         if($request->method == "allRecords"){
+      if($request->type == "elevator"){
+         if($request->action == "allRecords"){
             $query = DB::table("CRM_ELEVATOR")
             ->select("ID", "NAME", "BIN", "LOCATION", "STATION", "CONTACTS", "STORAGE_VOLUME")
             ->get();
@@ -51,7 +51,7 @@ class WorkSpaceController extends Controller
                "data" => $query
             ]);
          }
-         if($request->method == "detail"){
+         if($request->action == "detail"){
             $query = DB::table("CRM_ELEVATOR")
             ->select("ID", "NAME", "BIN", "LOCATION", "STATION", "CONTACTS", "STORAGE_VOLUME")
             ->where("ID", $request->recordId)
@@ -62,7 +62,7 @@ class WorkSpaceController extends Controller
                "data" => $query
             ]);
           }
-         if($request->method == "deleteRecord"){
+         if($request->action == "deleteRecord"){
             $query = DB::table("CRM_ELEVATOR")
             ->where("ID", $request->recordId)
             ->delete();
@@ -72,12 +72,34 @@ class WorkSpaceController extends Controller
                "message" => "Records delete !!!"
             ]);
          }
-         if($request->method == "updateRecord"){
-            
+         if($request->action == "updateRecord"){
+            $query = DB::table()
+            ->where("ID", $request->recordId)
+            ->update([
+               "CONTACTS" => $request->contactsRecord,
+               "STORAGE_VOLUME" => $request->volumeRecord
+            ]);
+            return response()->json([
+               "succes" => true,
+               "status" => 201,
+               "message" => "Records update"
+            ]);
+         }
+         if($request->action == "addRecord"){
+            $query = DB::table("CRM_ELEVATOR")
+            ->insert(['NAME' => $request->nameRecord, 
+            'BIN' => $request->binRecord, 
+            'LOCATION' => $request->locationRecord, 
+            'STATION' => $request->stationRecord, 
+            'CONTACTS' => $request->contactsRecord, 
+            'STORAGE_VOLUME' => $request->volumeRecord
+         ]);
+         return response()->json([
+            "succees" => true,
+            "status" => 201,
+            "message" => "Record add"
+         ]);
          }
       }
-   }
-   public function ElevatorSpace(){
-    ///elevator
    }
 }

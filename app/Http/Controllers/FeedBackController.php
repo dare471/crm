@@ -9,6 +9,18 @@ class FeedBackController extends Controller
 {
     public function CommentToElement(Request $request) {
         if($request->type == "fieldsComment"){
+            if($request->action == "viewsComment"){
+                $query = DB::table("CRM_COMMENT_ELEMENT")
+                ->where("ELEMENT_ID", $request->fieldsId);
+                if($request->categoryChapterId){
+                    $query->where("CATEGORY_CHAPTER_ID", $request->categoryChapterId);    
+                }
+                return response()->json([
+                    "succees" => true,
+                    "status" => 201,
+                    "data" => $query->get()
+                ]);
+            }
             if($request->action == "addComment"){
                 $query = DB::table("CRM_COMMENT_ELEMENT")
                 ->insert([
