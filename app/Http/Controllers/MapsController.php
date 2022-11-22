@@ -15,6 +15,8 @@ use App\Http\Resources\CultureRegionResource;
 use App\Http\Resources\FilterMaps;
 use App\Http\Resources\FilterSprCultMaps;
 
+use function PHPSTORM_META\map;
+
 class MapsController extends Controller
 {
 
@@ -248,7 +250,22 @@ class MapsController extends Controller
                     ->groupBy("CSC.ID", "CSC.NAME");
                     $response = FilterSprCultMaps::collection($query->get());
                 }
-                if($request->type == "filterMain"){
+                if($request->type == "searchIin"){
+                    $region = substr($request->catoID, 0, 2);
+                    $district = substr($request->catoID, 2, 4);
+                    $query = DB::table("CRM_CLIENT_INFO as CCI")
+                    ->select("CCI.ID as clientId", "CCI.NAME as clientName", "CCI.IIN_BIN as clientIin")
+                    ->where("CCI.IIN_BIN", "LIKE", "$request->clientIin%")
+                    ->where("CCI.REGION", $region)
+                    ->where("CCI.DISTRICT", $district)
+                    ->get();
+                    return response()->json([
+                        "succees" => true,
+                        "status" => 201,
+                        "data" => $query
+                    ]);
+                }
+                if($request->type == "filterMaps"){
                 $query = DB::table("CRM_CLIENT_PROPERTIES as CCR")
                 ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCR.CLIENT_INFO_ID")
                 ->leftjoin("CRM_CLIENT_ID_GUID as CCIG", "CCIG.ID", "CCI.CLIENT_ID")
@@ -269,15 +286,23 @@ class MapsController extends Controller
                 if($request->cato){
                     $region = substr($request->cato, 0, 2);
                     $district = substr($request->cato, 2, 4);
-                    $query->where("CCI.DISTRICT", "66");
+                    $query->where("CCI.REGION", $region)
+                    ->where("CCI.DISTRICT", $district);
                 }
                 if($request->cult){
                     $query->whereIn("CCR.CULTURE", $request->cult);
                 }
-                if($request->clientInn){
-                    $query->where("CCI.IIN_BIN", "LIKE", "$request->clientInn%");
+                if($request->clientId){
+                    $query->where("CLIENT_INFO_ID", $request->clientId);
                 }        
                 $response = FilterMaps::collection($query->get());
+            }
+            if(empty($query)){
+                return response()->json([
+                    "succees" => true,
+                    "status" => 201,
+                    "message" => "error type!"
+                ]);
             }
             return response()->json([
                 'success' => true,

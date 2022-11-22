@@ -9,18 +9,9 @@ use Illuminate\Support\Facades\DB;
 
 class CoordinatesController extends Controller
 {
-    // public function __construct()
-    // {
-    //     $this->middleware('auth:api');
-    // }
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function all()
     {
-        $db_ext = \DB::connection('CRM_DWH');
+        $db_ext = DB::connection('CRM_DWH');
         $coordinate = $db_ext->table('KOORDINATY_KONTRAGENTA_MAPS')
         ->select('SPOSOB_DOSTAVKI','ADRES_DOSTAVKI','FROM_LONGITUDE','FROM_LATITUDE','TO_LONGITUDE','TO_LATITUDE','NAIMENOVANIE','predstavlenie')
         ->where('SPOSOB_DOSTAVKI', '=', 'Наша транспортная служба до клиента')
@@ -69,7 +60,7 @@ class CoordinatesController extends Controller
 
     public function coordinate_warehouse()
     {
-        $db_ext = \DB::connection('CRM_DWH');
+        $db_ext = DB::connection('CRM_DWH');
         $coordinate = $db_ext->table('SPR_WAREHOUSE')
         ->select('GUID','WAREHOUSE_NAME','PRE_NAME','LONGITUDE','LATITUDE')
         ->get();
@@ -122,7 +113,7 @@ class CoordinatesController extends Controller
      */
     public function coord()
     {
-        $db_ext = \DB::connection('CRM_DWH');
+        $db_ext = DB::connection('CRM_DWH');
         $coordinates = $db_ext->table('KOORDINATY_KONTRAGENTA')
         ->select('IIN_BIN','CLIENT_COORDINATE','FAKT_ADRESS','MOTHER_OFFICE')
         ->get();
@@ -159,7 +150,7 @@ class CoordinatesController extends Controller
 
     public function store_coord()
     {
-        $db_ext = \DB::connection('CRM_DWH');
+        $db_ext = DB::connection('CRM_DWH');
         $coordinates = $db_ext->table('KOORDINATY_KONTRAGENTA')
         ->select('IIN_BIN','CLIENT_COORDINATE','FAKT_ADRESS','MOTHER_OFFICE')
         ->get();
@@ -193,41 +184,4 @@ class CoordinatesController extends Controller
         return $res['routes'];
         }
     }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Coordinates  $coordinates
-     * @return \Illuminate\Http\Response
-     */
-    public function show(Coordinates $coordinates)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Coordinates  $coordinates
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, Coordinates $coordinates)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Coordinates  $coordinates
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Coordinates $coordinates)
-    {
-        //
-    }
-    // protected function guard() {
-    //     return Auth::guard();
-    // }
 }

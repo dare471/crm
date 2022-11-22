@@ -25,15 +25,6 @@ Route::group([
     'namespace' => 'App\Http\Controllers',
 ], function ($router) {
 
-    //POWER BI REPORTS POINT 
-    Route::get('/report/all', 'AnalysesController@report_all');
-    Route::post('/report/insert', 'AnalysesController@report_insert');
-    Route::post('/report/update', 'AnalysesController@report_update');
-    Route::post('/report/delete', 'AnalysesController@report_delete');
-    Route::get('/report/{id}', 'AnalysesController@report_detail');
-    Route::get('/analytics', 'AnalysesController@analytics');
-    Route::get('/topmanager', 'AnalysesController@topmanager');
-    //POWERBi REPORTS END POINT
 
 
     //staff route
@@ -59,10 +50,7 @@ Route::group([
     Route::post('/elevator/tablevs/update', 'StaffController@UpdateDataTableSV'); // post query for update data
     Route::get('/elevator/element/delete/{id}', 'StaffController@ElementDelete');
     
-    //Api for semena table select all 
-    Route::get('/semena/all', 'StaffController@SemenaSelect');
-    Route::post('/semena/changedlist', 'StaffController@SemenaUpdate');
-    //end
+    
     
     
     ///test route for maps
@@ -92,9 +80,15 @@ Route::group([
     Route::post("/clientFields/v2/", "MapsController@MapsClient");
     Route::post("/filter", "MapsController@FilterForMaps");
     Route::post("/history/maps", "HistoryBrowsingController@HistoryBrowsing");
-    Route::post("/analytics", "AnalyticsController@AnalyticsMaps");
+    Route::post("/analytics", "MapsAnalyticsController@AnalyticsMaps");
     //END
 
+    //Api for WEB v2
+    Route::post("/contracts/v2", "ContractController@Contracts"); //Contracts manager with client
+    Route::post("/powerbi/report", "PowerBiController@PowerBiReport"); // POWERBI 
+    Route::post("/workplace", "WorkSpaceController@Worktable");
+    //END
+    
     //api for web
     Route::get('/contracts/{user_id}', 'StaffController@ListOrders');
     Route::get('/contracts/client/{client_id}', 'StaffController@AllOrdersClient');

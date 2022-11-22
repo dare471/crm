@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Listc;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Validator;
 
@@ -57,8 +58,7 @@ class DocumentCController extends Controller
     }
 
     public function list_category(){
-        $list = DB::connection('CRM_DWH')
-                ->table('CRM_JOURNAL')
+        $list = DB::table('CRM_JOURNAL')
                 ->select('*')
                 ->get();
                 return response([
