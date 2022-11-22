@@ -44,14 +44,6 @@ Route::group([
 
     //ELevator Work table 
     Route::get('/elevator/table', 'StaffController@WorkTable'); //list all elements
-    Route::get('/elevator/element/{id}', 'StaffController@ElementElevator'); //one elements 
-    Route::post('/elevator/element/add', 'StaffController@ElementElevatorAdd');
-    Route::post('/elevator/table/update', 'StaffController@UpdateDataTable'); // post query for update data
-    Route::post('/elevator/tablevs/update', 'StaffController@UpdateDataTableSV'); // post query for update data
-    Route::get('/elevator/element/delete/{id}', 'StaffController@ElementDelete');
-    
-    
-    
     
     ///test route for maps
     Route::get('/country','StaffController@Region');
@@ -87,6 +79,7 @@ Route::group([
     Route::post("/contracts/v2", "ContractController@Contracts"); //Contracts manager with client
     Route::post("/powerbi/report", "PowerBiController@PowerBiReport"); // POWERBI 
     Route::post("/workplace", "WorkSpaceController@Worktable");
+    Route::post("/comment", "FeedBackController@CommentToElement");
     //END
     
     //api for web

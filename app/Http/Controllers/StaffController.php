@@ -1137,24 +1137,7 @@ class StaffController extends Controller
             ]);
         }
     }
-    
 
-//category chapter
-    public function AddCategoryChapter(Request $request)
-    {
-    }
-    public function UpdateCategoryChapter(Request $request)
-    {
-    }
-    /*get */
-    public function FindCategoryChapter($id)
-    {
-    }
-    /*get */
-    public function DeleteCategoryChapter($id)
-    {
-    }
-    
 /// для инсенрта всех пользователей из таблицы users в таблицу crm_users
     public function Migrationalluser()
     {
