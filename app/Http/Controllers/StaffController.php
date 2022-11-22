@@ -164,7 +164,7 @@ class StaffController extends Controller
   //Route:: /district/{cato} || Method:: GET
   public function PolygonCLient($cato)
   {
-      $dbconn = DB::connection('CRM_DWH');
+      $dbconn = DB::congenection('CRM_DWH');
       $query =  $dbconn->select("SELECT  'clientPolygons' as type,
           CCR.[ID] as id
           ,CASE
@@ -243,12 +243,14 @@ class StaffController extends Controller
     }
 
     //Route:: /getCultureSpr || Method:: GET
-    public function GetCultureSpr($region){
+    public function GetCultureSpr($cato){
         $dbconn = DB::connection('CRM_DWH');
+        $region = substr($cato, 0, 2);
+        $district = substr($cato, 2, 4);
         $query = $dbconn->select("SELECT CSC.ID, CSC.NAME  FROM [CRM_DWH].[dbo].[CRM_SPR_CULTURE] CSC
         LEFT JOIN CRM_DWH.dbo.CRM_CLIENT_PROPERTIES ccp ON ccp.CULTURE = CSC.ID 
         LEFT JOIN CRM_DWH.dbo.CRM_CLIENT_INFO cci ON cci.ID = ccp.CLIENT_INFO_ID
-        WHERE cci.DISTRICT = $region GROUP BY CSC.ID, CSC.NAME");
+        WHERE cci.REGION = $region  and cci.DISTRICT = $district GROUP BY CSC.ID, CSC.NAME");
         if(empty($query)){
             return response()->json([
                 'succes' => false,
@@ -992,49 +994,6 @@ class StaffController extends Controller
         return response($query);
     }
 
-
-
-// // api for list Contracts
-// public function ListOrders($user_id)
-// {
-//     $dbconn = DB::connection('CRM_DWH');
-//     $query = $dbconn->table("CRM_CLIENT_ID_GUID as ccig")
-//     ->leftjoin("CRM_DOGOVOR as cd", "cd.KONTRAGENT_GUID", "ccig.GUID")
-//     ->leftjoin("CRM_USERS as CU", "CU.GUID", "CD.MENEDZHER_GUID")
-//     ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.CLIENT_ID", "ccig.ID")
-//     ->select(
-//         DB::raw("CONVERT(NVARCHAR(MAX), CD.GUID, 1) AS CONTRACTS_GUID"),
-//         "CU.ID AS MANAGER_ID",
-//         "CU.NAIMENOVANIE AS MANAGER_NAME",
-//         "CU.DIREKTSYA",
-//         "CU.DOLZHNOST",
-//         "CCIG.ID AS KONTRAGENT_ID", 
-//         "CD.KONTRAGENT AS KONTRAGENT_NAME",
-//         "CD.NAIMENOVANIE",
-//         "CCI.IIN_BIN AS KONTRAGENT_IIN",
-//         "SEZON AS SEASON",
-//         "CD.USLOVIYA_OPLATY",
-//         "CD.SPOSOB_DOSTAVKI",
-//         "CD.ADRES_DOSTAVKI",
-//         "CD.SUMMA_KZ_TG")
-//     ->where("CU.ID", $user_id)
-//     ->where("cd.OSNOVNOY_DOGOVOR", '')
-//     ->whereIn("SEZON", ["Сезон 2021", "Сезон 2022"])
-//     ->paginate(20);
-//     if ($query) {
-//         return response()->json([
-//             'success' => true,
-//             'status' => 201,
-//             'data' => $query
-//         ]);
-//     } else {
-//         return response()->json([
-//             'success' => false,
-//             'status' => 201,
-//             'data' => 'Data not found'
-//         ]);
-//     }
-// }
     public function ListOrders($user_id)
     {
         $dbconn = DB::connection('CRM_DWH');
@@ -1339,49 +1298,6 @@ class StaffController extends Controller
     }
 
 /// elevator api ends
-
-
-
-///semena table api
-    public function SemenaSelect(){
-        $db_ext = DB::connection('CRM_DWH');
-        $semena = $db_ext->table('CRM_SEMENA')
-        ->select(DB::raw('CONVERT(NVARCHAR(max), nomenklatura_guid, 1) as GUID'), 
-        DB::raw('CONVERT(NVARCHAR(max), direksiya, 1) as DIRECTION_GUID'),
-        'Остаток as REMAINDER',
-        'Компании as COMPANIES',
-        'Культура as CULTURE',
-        'Регион AS REGION',
-        'Название продукта AS PRODUCT_NAME',
-        'Технология AS TECHNOLOGIES',
-        'Подтверждение AS CHECKED',
-        'Продано AS SALES',
-        'Отгружено AS SHIPPED',
-        'Не отгружено AS NOT_SHIPPED',
-        'Стоки 2021 AS STOCKED_2021',
-        'Стоки 2022 AS STOCKED_2022',
-        'Поступление_2021 AS ADMISSION_2021',
-        'Поступление_2022 AS ADMISSION_2022')
-        ->get();
-        return response($semena);
-    }
-
-
-
-    public function SemenaUpdate(Request $request){
-        $semena = DB::connection('CRM_DWH')->statement("EXEC [CRM_DWH].[dbo].UPDATE_SEMENA_PODTVERZHDENIE
-        @nomenklatura_guid= $request->GUID  
-        ,@direksiya= $request->DIRECTION_GUID
-        ,@PODTVERZHDENIE= $request->POTR");
-        return response()->json(['status' => true, 'message' => 'success', 'query'=> $semena], 200);
-    }
-///end 
-
-
-
-    
-
-
 
 /// для инсенрта всех пользователей из таблицы users в таблицу crm_users
     public function Migrationalluser()
