@@ -28,7 +28,7 @@ class MapsController extends Controller
             ->select(DB::raw("'region' as type"), 
             "ID", 
             "NAME", 
-            DB::raw("SUBSTRING(KATO, 0, 3) as cato"),
+            DB::raw("SUBSTRING(KATO, 0, 3) as region"),
             "POPULATION_AREA as population_area",
             "POPULATION_CITY as population_city",
             "POPULATION_VILLAGE as population_village",
@@ -49,7 +49,7 @@ class MapsController extends Controller
             "TEXT",
             "KLKOD",
             "VNAIM", 
-            DB::raw("SUBSTRING(KATO, 0, 5) as cato"), 
+            DB::raw("SUBSTRING(KATO, 0, 5) as district"), 
             "geometry_rings")
             ->where("KATO", "LIKE", "$request->cato%")
             ->get();
@@ -76,7 +76,7 @@ class MapsController extends Controller
                 WHEN CCIG.GUID IS NOT NULL THEN '1'
                 END as guid"),
                 "CCI.NAME as name",
-                "CLIENT_INFO_ID as client_info_id",
+                "CLIENT_INFO_ID as clientID",
                 "CCP.COORDINATES as geometry_rings"
                 )
             ->where($condition_arr)
@@ -239,6 +239,8 @@ class MapsController extends Controller
 //* ФИЛЬТР участков под критерий  
         public function FilterForMaps(Request $request){
                 if($request->type == "sprCult"){
+                    $region = substr($request->district, 0, 2);
+                    $district = substr($request->district, 2, 4);
                     $query = DB::table("CRM_SPR_CULTURE as CSC")
                     ->leftjoin("CRM_CLIENT_PROPERTIES as CCR", "CCR.CULTURE", "CSC.ID")
                     ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCR.CLIENT_INFO_ID")
@@ -246,23 +248,28 @@ class MapsController extends Controller
                         "CSC.ID as id",
                         "CSC.NAME as nameCult"
                         )
-                    ->where("CCI.DISTRICT", $request->district)
-                    ->groupBy("CSC.ID", "CSC.NAME");
-                    $response = FilterSprCultMaps::collection($query->get());
+                    ->where("CCI.REGION", $region)
+                    ->where("CCI.DISTRICT", $district);
+                    
+                    $response = FilterSprCultMaps::collection($query->groupBy("CSC.ID", "CSC.NAME")->get());
                 }
                 if($request->type == "searchIin"){
                     $region = substr($request->catoID, 0, 2);
                     $district = substr($request->catoID, 2, 4);
                     $query = DB::table("CRM_CLIENT_INFO as CCI")
+                    ->leftjoin("CRM_CLIENT_PROPERTIES AS CCP", "CCP.CLIENT_INFO_ID", "CCI.ID")
+                    ->leftjoin("CRM_SPR_CULTURE as CSC", "CSC.ID", "CCP.CULTURE")
                     ->select("CCI.ID as clientId", "CCI.NAME as clientName", "CCI.IIN_BIN as clientIin")
                     ->where("CCI.IIN_BIN", "LIKE", "$request->clientIin%")
                     ->where("CCI.REGION", $region)
-                    ->where("CCI.DISTRICT", $district)
-                    ->get();
+                    ->where("CCI.DISTRICT", $district);
+                    if($request->culture){
+                        $query->whereIn("CCP.CULTURE", $request->culture);
+                    }
                     return response()->json([
                         "succees" => true,
                         "status" => 201,
-                        "data" => $query
+                        "data" => $query->groupBy("CCI.ID", "CCI.NAME", "CCI.IIN_BIN")->get()
                     ]);
                 }
                 if($request->type == "filterMaps"){
@@ -279,6 +286,7 @@ class MapsController extends Controller
                     DB::raw("CASE WHEN CCIG.GUID IS NULL THEN NULL WHEN CCIG.GUID IS NOT NULL THEN '1' END as guid"), 
                     "CCR.CULTURE as cultureID", 
                     "CSC.NAME as cultureName",
+                    "CSC.COLOR as color",
                     "CCI.DISTRICT as district",
                     "CCI.REGION as region",
                     "CCR.COORDINATES as geometry_rings"

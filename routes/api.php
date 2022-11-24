@@ -63,7 +63,7 @@ Route::group([
     //end route for maps 
 
     // Route FOR TESTING !!!
-    Route::get('/testdo/{id}', 'StaffController@todol');
+    Route::post('/testdo', 'StaffController@todol');
     Route::post('/testdo/v2/', 'StaffController@TestClientFields');
     //END
 
@@ -76,10 +76,10 @@ Route::group([
     //END
 
     //Api for WEB v2
-    Route::post("/contracts/v2", "ContractController@Contracts"); //Contracts manager with client
     Route::post("/powerbi/report", "PowerBiController@PowerBiReport"); // POWERBI 
     Route::post("/workplace", "WorkSpaceController@Worktable");
     Route::post("/comment", "FeedBackController@CommentToElement");
+    Route::post("/contract", "ContractController@Contracts");
     //END
     
     //api for web

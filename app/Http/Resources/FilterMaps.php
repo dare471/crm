@@ -23,9 +23,10 @@ class FilterMaps extends JsonResource
             'guid' => $this->guid,
             'cultureID' => $this->cultureID,
             'cultureName' => $this->cultureName,
+            'color' => $this->color,
             'district' => $this->district,
             'region' => $this->region,
-            'geometry_ring' => json_decode($this->geometry_rings, true), 
+            'geometry_rings' => json_decode($this->geometry_rings, true), 
         ];
     }
 }

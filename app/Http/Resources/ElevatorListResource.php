@@ -21,7 +21,7 @@ class ElevatorListResource extends JsonResource
             'location' => $this->LOCATION,
             'station' => $this->STATION,
             'contacts' => $this->CONTACTS,
-            'storage_volume' => $this->STORAGE_VOLUME,
+            'storageVolume' => $this->STORAGE_VOLUME,
             'latitude' => $this->LATITUDE,
             'longitude' => $this->LONGITUDE
         ];

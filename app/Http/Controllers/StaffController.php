@@ -528,8 +528,30 @@ class StaffController extends Controller
 
 
 //{ TEST API  }
-    public function todol($id){
+    public function todol(Request $request){
+        // $login = $request->login;
+        // $password = $request->password;
+        // $ldapconn = ldap_connect("192.168.1.241")
+        // or die("Could not connect to LDAP server.");
+        // if ($ldapconn) {
+        //     // binding to ldap server
+        //     $ldapbind = ldap_bind($ldapconn, "d.onglassyn@alagro.local", "QWE123qwe!");
+        //     if ($ldapbind) {
+        //         return response()->json([
+        //             "succes"=> true,
+        //             "status" => 201,
+        //             "message" => "LDAP-привязка успешна..."
+        //         ]);
+        //     } 
+        //     else {
+        //         return response()->json([
+        //             "succes"=> true,
+        //             "status" => 201,
+        //             "message" => "LDAP-привязка не успешна..."
+        //         ]);
+        //     }
 
+        // }
         $dbconn = DB::connection('CRM_DWH');
         $query = $dbconn->select("
         SELECT 'clientFieldCulture' as type,
@@ -543,7 +565,7 @@ class StaffController extends Controller
             LEFT JOIN [CRM_DWH].[dbo].[CRM_CLIENT_INFO] AS CCI ON CCI.ID=CCR.CLIENT_INFO_ID
             LEFT JOIN [CRM_DWH].[dbo].[CRM_CLIENT_ID_GUID] AS CCIG ON CCIG.ID=CCI.CLIENT_ID
             LEFT JOIN [CRM_DWH].[dbo].[CRM_SPR_CULTURE] AS CSC ON CSC.ID = CCR.CULTURE
-            WHERE CLIENT_INFO_ID = $id AND SOURCE=1
+            WHERE CLIENT_INFO_ID = $request->id AND SOURCE=1
         GROUP BY 
             CULTURE,
             CSC.NAME,
@@ -557,7 +579,7 @@ class StaffController extends Controller
             cci.ADDRESS as address
         FROM [CRM_DWH].[dbo].[CRM_CLIENT_PROPERTIES] AS CCR
         LEFT JOIN CRM_CLIENT_INFO cci ON cci.ID = CCR.CLIENT_INFO_ID  
-            WHERE CCR.CLIENT_INFO_ID  = '$id' AND SOURCE=1 GROUP BY cci.NAME,
+            WHERE CCR.CLIENT_INFO_ID  = '$request->id' AND SOURCE=1 GROUP BY cci.NAME,
             cci.ADDRESS");
         
         $nnarray = [];
@@ -833,7 +855,7 @@ class StaffController extends Controller
         COUNT_FIELDS = (SELECT count(ccp.ID)  FROM CRM_CLIENT_PROPERTIES ccp WHERE ccp.CLIENT_INFO_ID = CCI.CLIENT_ID)
         FROM [CRM_DWH].[dbo].[CRM_CLIENT_INFO] AS CCI
         LEFT JOIN [dbo].[CRM_CLIENT_ID_GUID] AS CCIG ON  CCIG.ID=CCI.CLIENT_ID
-        WHERE CATO LIKE '$id%'
+        WHERE REGION = '$id'
         GROUP BY GUID
             ,[NAME]
             ,[ADDRESS]

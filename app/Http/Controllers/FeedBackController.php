@@ -28,8 +28,7 @@ class FeedBackController extends Controller
                     'DESCRIPTION' => $request->description,
                     'CREATED_BY' => $request->createdBy,
                     'CATEGORY_CHAPTER_ID' => $request->categoryChapterId,
-                    'TYPE' => $request->typeComment, // type = 1 it's just comment, if type=2 it's answer for commnet
-                    'ANSWER_ID' => $request->answerUserId,
+                    'TYPE' => $request->typeComment,
                 ]);
             }
             if($request->action == "answerComment"){
@@ -71,4 +70,5 @@ class FeedBackController extends Controller
             }
         }
     }
+    
 }
