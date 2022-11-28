@@ -4,7 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class DistrictPolygonResource extends JsonResource
+class HeaderClientLandResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -16,11 +16,10 @@ class DistrictPolygonResource extends JsonResource
     {
         return [
             'type' => $this->type,
-            'name' => $this->TEXT,
-            'klkod' => $this->KLKOD,
-            'vnaim' => $this->VNAIM,
-            'districtId' =>  $this->district,
-            'geometry_rings' => json_decode($this->geometry_rings, true),
+            'clientId' => $this->clientID,
+            'address' => $this->address,
+            'countLands' => $this->countLands,
+            'area' => $this->area
         ];
     }
 }

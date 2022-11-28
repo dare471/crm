@@ -4,7 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class DistrictPolygonResource extends JsonResource
+class HeaderLandInfResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -15,12 +15,7 @@ class DistrictPolygonResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'type' => $this->type,
-            'name' => $this->TEXT,
-            'klkod' => $this->KLKOD,
-            'vnaim' => $this->VNAIM,
-            'districtId' =>  $this->district,
-            'geometry_rings' => json_decode($this->geometry_rings, true),
+            
         ];
     }
 }

@@ -12,7 +12,7 @@ class MapsAnalyticsController extends Controller
                 ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.IIN_BIN", "CSS.APPLICANT_IIN_BIN")
                 ->leftjoin("CRM_CLIENT_PROPERTIES as CCP", "CCP.CLIENT_INFO_ID", "CCI.ID")
                 ->leftjoin("CRM_SPR_CULTURE as CSC", "CSC.ID", "CCP.CULTURE")
-                ->select("CSC.NAME as cultName", 
+                ->select(DB::raw("'seedPivot' as type"),"CSC.NAME as cultName", 
                 "CSC.ID as cultId", 
                 "CSS.PROVIDER_NAME as providerName", 
                 DB::raw("SUM(SUM_SUBSIDIES) as sumSubside"), 
@@ -31,19 +31,28 @@ class MapsAnalyticsController extends Controller
                 if($request->cultureId){
                     $query->where("CSC.ID", $request->cultureId);
                 }
-                $data = $query->groupBy("CSC.NAME", "CSC.ID", "CSS.PROVIDER_NAME", "CSS.UNIT")->orderByDesc("sumSubside")->get();
+                $query = $query->groupBy("CSC.NAME", "CSC.ID", "CSS.PROVIDER_NAME", "CSS.UNIT")->orderByDesc("sumSubside")->paginate(10);
+                
                 return response()->json([
-                    "succes" => true,
-                    "status" => 201,
-                    "data"=> $data
+                        "status" => 201,
+                        "succes" => true,
+                        "header" => [
+                            "currentPage" => $query->currentPage(),
+                            "nextPageUrl" => $query->nextPageUrl(),
+                            "prevPageUrl" => $query->previousPageUrl(),
+                            "total" => $query->total()
+                        ],
+                        "data" => $query->items()
                 ]);
+                return (new ResponseClusterController)->ResponseFunction($query, null);
+              
         }
         if($request->type == "mineralsPivot"){
             $query = DB::table("CRM_SHYMBULAK_MINERALS as CSM")
                 ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.IIN_BIN", "CSM.APPLICANT_IIN_BIN")
                 ->leftjoin("CRM_CLIENT_PROPERTIES as CCP", "CCP.CLIENT_INFO_ID", "CCI.ID")
                 ->leftjoin("CRM_SPR_CULTURE as CSC", "CSC.ID", "CCP.CULTURE")
-                ->select("CSC.NAME as cultName", 
+                ->select(DB::raw("'mineralPivot' as type"),"CSC.NAME as cultName", 
                 "CSC.ID as cultId", 
                 "CSM.MINERALS_NAME",
                 "CSM.PROVIDER_NAME as providerName", 
@@ -63,19 +72,27 @@ class MapsAnalyticsController extends Controller
                 if($request->cultureId){
                     $query->where("CSC.ID", $request->cultureId);
                 }
-                $data = $query->groupBy("CSC.NAME", "CSM.MINERALS_NAME", "CSC.ID", "CSM.PROVIDER_NAME", "CSM.UNIT")->orderByDesc("sumSubside")->get();
+                $query = $query->groupBy("CSC.NAME", "CSM.MINERALS_NAME", "CSC.ID", "CSM.PROVIDER_NAME", "CSM.UNIT")->orderByDesc("sumSubside")->paginate(10);
                 return response()->json([
-                    "succes" => true,
                     "status" => 201,
-                    "data"=> $data
-                ]);
+                    "succes" => true,
+                    "header" => [
+                        "currentPage" => $query->currentPage(),
+                        "nextPageUrl" => $query->nextPageUrl(),
+                        "prevPageUrl" => $query->previousPageUrl(),
+                        "total" => $query->total()
+                    ],
+                    "data" => $query->items()
+            ]);
+               // return (new ResponseClusterController)->ResponseFunction($query, null);
+
         }
         if($request->type == "pesticidesPivot"){
             $query = DB::table("CRM_SHYMBULAK_PESTICIDES as CSP")
                 ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.IIN_BIN", "CSP.APPLICANT_IIN_BIN")
                 ->leftjoin("CRM_CLIENT_PROPERTIES as CCP", "CCP.CLIENT_INFO_ID", "CCI.ID")
                 ->leftjoin("CRM_SPR_CULTURE as CSC", "CSC.ID", "CCP.CULTURE")
-                ->select("CSC.NAME as cultName", 
+                ->select(DB::raw("'pesticidePivot' as type"),"CSC.NAME as cultName", 
                 "CSC.ID as cultId", 
                 "CSP.PESTICIDES_NAME",
                 "CSP.PROVIDER as providerName", 
@@ -95,12 +112,21 @@ class MapsAnalyticsController extends Controller
                 if($request->cultureId){
                     $query->where("CSC.ID", $request->cultureId);
                 }
-                $data = $query->groupBy("CSC.NAME", "CSP.PESTICIDES_NAME", "CSC.ID", "CSP.PROVIDER", "CSP.UNIT")->orderByDesc("sumSubside")->get();
+                $query = $query->groupBy("CSC.NAME", "CSP.PESTICIDES_NAME", "CSC.ID", "CSP.PROVIDER", "CSP.UNIT")->orderByDesc("sumSubside")->paginate(10);
+
                 return response()->json([
-                    "succes" => true,
                     "status" => 201,
-                    "data"=> $data
+                    "succes" => true,
+                    "header" => [
+                        "currentPage" => $query->currentPage(),
+                        "nextPageUrl" => $query->nextPageUrl(),
+                        "prevPageUrl" => $query->previousPageUrl(),
+                        "total" => $query->total()
+                    ],
+                    "data" => $query->items()
                 ]);
+                //return (new ResponseClusterController)->ResponseFunction($query, null);
+
         }
         if($request->type == "clientPivot"){
             

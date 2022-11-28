@@ -7,10 +7,10 @@ use App\Http\Controllers\ResponseClusterController;
 
 class ContractController extends Controller
 {
-    //Маршрут для условий
+    //Маршрут условий для функции
     public function Contracts(Request $request)
     {
-        if($request->type == "allContracts"){
+        if($request->type == "managerContracts"){
             return  ContractController::AllContracts($request);
         }
         if($request->type == "detailContract"){
@@ -57,7 +57,7 @@ class ContractController extends Controller
                 ->leftjoin("CRM_DOGOVOR as CD", "CD.KONTRAGENT_GUID", "CCIG.GUID")
                 ->leftjoin("CRM_USERS as CU", "CU.GUID", "CD.MENEDZHER_GUID")
                 ->select(
-                    DB::raw("'contractDetail' as type"),
+                    DB::raw("'detailContract' as type"),
                     "CD.ID as contractId", DB::raw("CONVERT(NVARCHAR(MAX), CD.GUID, 1) as contractsGuid"),"CU.ID as managerID",
                     "CU.NAIMENOVANIE as managerName",
                     "CU.DIREKTSYA as direction",
@@ -94,10 +94,6 @@ class ContractController extends Controller
                 )
             ->where("CD.ID", $request->contractId)
             ->get();
-            // $body = json_decode($bodyContract);
-            // $spec[] = json_decode($specificateContract);
-            // $arrResponse = array_merge($body, $spec);
-            
             return (new ResponseClusterController)->ResponseFunction($bodyContract, $specificateContract);
            
     }

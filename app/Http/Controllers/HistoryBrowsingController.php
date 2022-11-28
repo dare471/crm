@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Http\Resources\HistoryBrowsingResource;
-use function PHPSTORM_META\map;
+
 
 class HistoryBrowsingController extends Controller
 {

@@ -14,8 +14,7 @@ use App\Http\Resources\ElevatorListResource;
 use App\Http\Resources\CultureRegionResource;
 use App\Http\Resources\FilterMaps;
 use App\Http\Resources\FilterSprCultMaps;
-
-use function PHPSTORM_META\map;
+use App\Http\Controllers\ResponseClusterController;
 
 class MapsController extends Controller
 {
@@ -28,7 +27,7 @@ class MapsController extends Controller
             ->select(DB::raw("'region' as type"), 
             "ID", 
             "NAME", 
-            DB::raw("SUBSTRING(KATO, 0, 3) as region"),
+            DB::raw("SUBSTRING(KATO, 0, 3) as regionId"),
             "POPULATION_AREA as population_area",
             "POPULATION_CITY as population_city",
             "POPULATION_VILLAGE as population_village",
@@ -36,11 +35,8 @@ class MapsController extends Controller
             "KLKOD" 
             )
             ->get();
-            return response()->json([
-                'succes' => true,
-                'status' => 201,
-                'data' => RegionPolygonResource::collection($query)
-            ]);
+            return (new ResponseClusterController)->ResponseFunction($query, null);
+            
         }
         if($request->type=='district'){
             $query = DB::table("CRM_AISGZK_RAION_GEO")
@@ -53,13 +49,9 @@ class MapsController extends Controller
             "geometry_rings")
             ->where("KATO", "LIKE", "$request->cato%")
             ->get();
-            return response()->json([
-                'succes' => true,
-                'status' => 201,
-                'data' => DistrictPolygonResource::collection($query)
-            ]);
+            return (new ResponseClusterController)->ResponseFunction($query, null);
         }
-        if($request->type=='clientFields'){
+        if($request->type=='clientLands'){
             $region_cato=substr($request->cato, 0, 2);
             $district_cato = substr($request->cato, 2, 4);
             $condition_arr = [["CCI.REGION", $region_cato]];
@@ -70,7 +62,7 @@ class MapsController extends Controller
             ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCP.CLIENT_INFO_ID")
             ->leftjoin("CRM_CLIENT_ID_GUID as CCIG", "CCIG.ID", "CCI.CLIENT_ID")
             ->select(
-               DB::raw("'clientFields' as type"),
+               DB::raw("'clientLands' as type"),
                 "CCP.ID",
                 DB::raw("CASE WHEN CCIG.GUID IS NULL THEN ''
                 WHEN CCIG.GUID IS NOT NULL THEN '1'
@@ -81,15 +73,12 @@ class MapsController extends Controller
                 )
             ->where($condition_arr)
             ->get();
-            return response()->json([
-                'succes' => true,
-                'status' => 201,
-                'data' => ClientsFieldsPolygonResource::collection($query)
-            ]);
+            return (new ResponseClusterController)->ResponseFunction($query, null);
         }
         if($request->type=='elevatorMarker'){
             $query = DB::table("CRM_ELEVATOR")
-            ->select("ID",
+            ->select(DB::raw("'elevator' as type"),
+            "ID",
             "NAME", 
             "BIN", 
             "LOCATION", 
@@ -100,11 +89,7 @@ class MapsController extends Controller
             "LATITUDE", 
             "LONGITUDE")
             ->get();
-            return response()->json([
-                'succes' => true,
-                'status' => 201,
-                'data' => ElevatorListResource::collection($query)
-            ]);
+            return (new ResponseClusterController)->ResponseFunction($query, null);
         }
         if($request->type=='getCulture'){
             if($request->typeLevel == 'region'){
@@ -116,15 +101,11 @@ class MapsController extends Controller
             $query = DB::table("CRM_SPR_CULTURE as CSC")
             ->leftjoin("CRM_CLIENT_PROPERTIES as CCP", "CCP.CULTURE", "CSC.ID")
             ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCP.CLIENT_INFRO_ID")
-            ->select("CSC.ID","CSC.NAME")
+            ->select(DB::raw("'getCulture' as type"),"CSC.ID","CSC.NAME")
             ->where($typeLevel, $request->regionCato)
             ->groupBy("CSC.ID", "CSC.NAME")
             ->get();
-            return response()->json([
-                'success' => true,
-                'status' => 201,
-                'data' => CultureRegionResource::collection($query)
-            ]);
+            return (new ResponseClusterController)->ResponseFunction($query, null);
         }
     }
 //* Конец функции
@@ -137,6 +118,7 @@ class MapsController extends Controller
             ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCR.CLIENT_INFO_ID")
             ->leftjoin("CRM_CLIENT_ID_GUID as CCIG", "CCIG.ID", "CCI.CLIENT_ID")
             ->select(
+            DB::raw("'clientLands' as type"),
             "CCR.ID as id",
             "FIELDS as fields",
             "CLIENT_INFO_ID as client_info_id",
@@ -158,12 +140,13 @@ class MapsController extends Controller
             ->select(DB::raw("'clientLandInf' as type"), 
             "CLIENT_INFO_ID as clientID",
             DB::raw("COUNT(*) as countLands"),
-            DB::raw("SUM(AREA)/10000 as area")
+            DB::raw("SUM(AREA) as area")
             )
             ->where("CLIENT_INFO_ID", $request->clientID)
             ->groupby("CLIENT_INFO_ID")
             ->get();
-            $response = ClientFieldsPolygonResource::collection($query);
+            return (new ResponseClusterController)->ResponseFunction($query, $headers);
+          
         }
 
         if($request->type == 'cultures'){
@@ -172,6 +155,7 @@ class MapsController extends Controller
             ->leftjoin("CRM_CLIENT_ID_GUID as CCIG", "CCIG.ID", "CCI.CLIENT_ID")
             ->leftjoin("CRM_SPR_CULTURE as CSC", "CSC.ID", "CCR.CULTURE")
             ->select(
+            DB::raw("'clientCulture' as type"),
             'CSC.NAME as nameCult',
             'CULTURE as fieldsCultureId',
             'CCR.CLIENT_INFO_ID as client_info_id',
@@ -182,28 +166,29 @@ class MapsController extends Controller
             ->where("SOURCE", "1")
             ->groupby("CSC.NAME", "CULTURE", "CCR.CLIENT_INFO_ID", "CSC.COLOR")
             ->get();
-            $response = ClientsFieldsPolygonResource::collection($query);
 
             $headers = DB::table("CRM_CLIENT_PROPERTIES as CCR")
             ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCR.CLIENT_INFO_ID")
-            ->select(DB::raw("SUM(AREA) as area_g", 
-            "COUNT(*) as countFields"), 
+            ->select(DB::raw("'clientLandInf' as type,
+            SUM(AREA) as area, 
+            COUNT(*) as countLand"), 
             "CCI.NAME as name", 
             "CCI.ADDRESS as address")
             ->where("CCR.CLIENT_INFO_ID", $request->clientID)
             ->groupBy("CCI.NAME", "CCI.ADDRESS")
             ->get();
-            //$response = ClientsFieldsPolygonResource::collection($query);
+
+            return (new ResponseClusterController)->ResponseFunction($query, $headers);
         }
 
-        if($request->type == 'getFieldsCulture'){
+        if($request->type == 'getLandCulture'){
             $query = DB::table("CRM_CLIENT_PROPERTIES as CCR")
             ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCR.CLIENT_INFO_ID")
             ->leftjoin("CRM_CLIENT_ID_GUID as CCIG", "CCIG.ID", "CCI.CLIENT_ID")
             ->leftjoin("CRM_SPR_CULTURE as CSC", "CSC.ID", "CCR.CULTURE")
-            ->select("CCR.ID", 
+            ->select(DB::raw("'landInf'"),"CCR.ID", 
             "FIELDS", 
-            "CCR.CLIENT_INFO_ID", 
+            "CCR.CLIENT_INFO_ID as client_info_id", 
             "CSC.COLOR as color",
             "CSC.NAME",
             DB::raw("CASE 
@@ -221,26 +206,25 @@ class MapsController extends Controller
 
             $headers =  DB::table("CRM_CLIENT_PROPERTIES AS CCR")
             ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCR.CLIENT_INFO_ID")
-            ->select(DB::raw("SUM(AREA/10000) as area"), 
-            DB::raw("COUNT(*) as count_fields"))
+            ->select(DB::raw("SUM(AREA) as area"), 
+            DB::raw("COUNT(*) as countFields"))
             ->where("CLIENT_INFO_ID", $request->clientID)
             ->where("CCR.CULTURE", $request->fieldsCultureID)
             ->get();
-        }
-        return response()->json([
-                'success' => true,
-                'status' => 201,
-                'headers' => $headers,
-                'data' => $response
+            return response()->json([
+                "data" => $query,
+                "header" => $headers
             ]);
+        }
+       
         }
 //*Конец функции 
 
 //* ФИЛЬТР участков под критерий  
         public function FilterForMaps(Request $request){
                 if($request->type == "sprCult"){
-                    $region = substr($request->district, 0, 2);
-                    $district = substr($request->district, 2, 4);
+                    $region = substr($request->districtId, 0, 2);
+                    $district = substr($request->districtId, 2, 4);
                     $query = DB::table("CRM_SPR_CULTURE as CSC")
                     ->leftjoin("CRM_CLIENT_PROPERTIES as CCR", "CCR.CULTURE", "CSC.ID")
                     ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCR.CLIENT_INFO_ID")

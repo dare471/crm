@@ -22,7 +22,7 @@ class ClientsFieldsPolygonResource extends JsonResource
             $nnarray[] = $json[0];
         }
         return [
-            'type' => 'clientFieldCulture',
+            'type' => 'clientLandCulture',
             'nameCult' => $this->nameCult,
             'fieldsCultureId' => $this->fieldsCultureId,
             'client_info_id' =>  $this->client_info_id,

@@ -18,7 +18,7 @@ class RegionPolygonResource extends JsonResource
             'id' =>  $this->ID,
             'type' => $this->type,
             'name' => $this->NAME,
-            'cato' => $this->cato,
+            'cato' => $this->regionId,
             'population_area' => $this->population_area,
             'geometry_rings' => json_decode($this->geometry_rings, true)
         ];
