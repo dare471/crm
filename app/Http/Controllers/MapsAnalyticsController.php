@@ -54,7 +54,7 @@ class MapsAnalyticsController extends Controller
                 ->leftjoin("CRM_SPR_CULTURE as CSC", "CSC.ID", "CCP.CULTURE")
                 ->select(DB::raw("'mineralPivot' as type"),"CSC.NAME as cultName", 
                 "CSC.ID as cultId", 
-                "CSM.MINERALS_NAME",
+                "CSM.MINERALS_NAME as name",
                 "CSM.PROVIDER_NAME as providerName", 
                 DB::raw("SUM(SUM_SUBSIDIES) as sumSubside"), 
                 DB::raw("SUM(AREA) as areaSubs"),
@@ -94,7 +94,7 @@ class MapsAnalyticsController extends Controller
                 ->leftjoin("CRM_SPR_CULTURE as CSC", "CSC.ID", "CCP.CULTURE")
                 ->select(DB::raw("'pesticidePivot' as type"),"CSC.NAME as cultName", 
                 "CSC.ID as cultId", 
-                "CSP.PESTICIDES_NAME",
+                "CSP.PESTICIDES_NAME as name",
                 "CSP.PROVIDER as providerName", 
                 DB::raw("SUM(SUM_SUBSIDIES) as sumSubside"), 
                 DB::raw("SUM(AREA) as areaSubs"),
