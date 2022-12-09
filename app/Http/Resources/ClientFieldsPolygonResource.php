@@ -16,7 +16,7 @@ class ClientFieldsPolygonResource extends JsonResource
     {
         return [
             'type' => 'clientLand',
-            'id' => $this->ID,
+            'id' => $this->id,
             'fields' => $this->fields,
             'guid' => $this->guid,
             'geometry_rings' => json_decode($this->geometry_rings, true),

@@ -49,7 +49,7 @@ Route::group([
     Route::get('/country','StaffController@Region');
     Route::get('/district/{cato}','StaffController@PolygonCLient');
     Route::get('/region/{kat_f}','StaffController@District');
-    Route::get('/district_new/{cato}', 'StaffController@ClientFields');
+    Route::get('/district_new/{cato}', 'StaffController@MongoDb');
     Route::get('/elevatorMarker/', 'StaffController@ElevatorMarker');
     Route::post('/clientDistrictFields/','StaffController@clientDistrictFields'); /// ----
     Route::get('/getCultureSpr/{region}', 'StaffController@GetCultureSpr');
@@ -70,7 +70,7 @@ Route::group([
     //Route v2 for Maps 
     Route::post("/country/v2/", "MapsController@MainController");
     Route::post("/clientFields/v2/", "MapsController@MapsClient");
-    Route::post("/filter", "MapsController@FilterForMaps");
+    Route::post("/mainquery", "MapsController@FilterForMaps");
     Route::post("/history/maps", "HistoryBrowsingController@HistoryBrowsing");
     Route::post("/analytics", "MapsAnalyticsController@AnalyticsMaps");
     //END

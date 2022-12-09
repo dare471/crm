@@ -15,11 +15,11 @@ class DistrictPolygonResource extends JsonResource
     public function toArray($request)
     {
         return [
+            'id' =>  $this->district,
             'type' => $this->type,
             'name' => $this->TEXT,
             'klkod' => $this->KLKOD,
             'vnaim' => $this->VNAIM,
-            'districtId' =>  $this->district,
             'geometry_rings' => json_decode($this->geometry_rings, true),
         ];
     }

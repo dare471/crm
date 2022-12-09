@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Facade\FlareClient\Http\Response;
 use Illuminate\Http\Request;
 use App\Http\Resources\ClientsFieldsPolygonResource;
+use App\Http\Resources\MongoExample;
 use Illuminate\Support\Facades\DB;
 
 class StaffController extends Controller
@@ -102,6 +103,17 @@ class StaffController extends Controller
         ]);
     }
 
+   public function MongoDb($cato){
+        $cato = (int)$cato;
+        $query = DB::connection("mongodb")->table("regionlasticC")
+        ->where('REGION', $cato);
+        return response()->json([
+            'success' => true,
+            'status' => 201,
+            'data' => $query->get()
+        ]);   
+   }
+
   ///Route:: /district_new/{cato}  || Method:: GET 
   public function ClientFields($cato)
   {
@@ -153,7 +165,7 @@ class StaffController extends Controller
     BIN, 
     LOCATION, 
     STATION, CONTACTS, STORAGE_VOLUME, LATITUDE, LONGITUDE
-    FROM CRM_DWH.dbo.CRM_ELEVATOR WHERE STATUS='ДА'");
+    FROM CRM_DWH.dbo.CRM_ELEVATOR WHERE LATITUDE IS NOT NULL AND STATUS = 'ДА'");
     return response()->json([
         'success' => true,
         'status' => 201,
@@ -246,11 +258,20 @@ class StaffController extends Controller
     public function GetCultureSpr($cato){
         $dbconn = DB::connection('CRM_DWH');
         $region = substr($cato, 0, 2);
+        if($region){
+            $sql = "cci.REGION = $region";
+        }
         $district = substr($cato, 2, 4);
+        if($district){
+            $sql2="and cci.DISTRICT = $district";
+        }
+        else{
+            $sql2="";
+        }
         $query = $dbconn->select("SELECT CSC.ID, CSC.NAME  FROM [CRM_DWH].[dbo].[CRM_SPR_CULTURE] CSC
         LEFT JOIN CRM_DWH.dbo.CRM_CLIENT_PROPERTIES ccp ON ccp.CULTURE = CSC.ID 
         LEFT JOIN CRM_DWH.dbo.CRM_CLIENT_INFO cci ON cci.ID = ccp.CLIENT_INFO_ID
-        WHERE cci.REGION = $region  and cci.DISTRICT = $district GROUP BY CSC.ID, CSC.NAME");
+        WHERE $sql $sql2 GROUP BY CSC.ID, CSC.NAME");
         if(empty($query)){
             return response()->json([
                 'succes' => false,

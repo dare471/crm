@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\DB;
 
 class FilterMaps extends JsonResource
 {
@@ -14,19 +15,42 @@ class FilterMaps extends JsonResource
      */
     public function toArray($request)
     {
+        
+        $geo = explode(" | ", $this->geometry_rings);
+       // $plotsid = explode(" | ", $this->plotId);
+        $nnarray = [];
+        // $narray = [];
+        // $array = [];
+        $countKeys = count($geo);
+        for($i = 0; $i < $countKeys; $i++){
+            $nnarray[$i] = json_decode($geo[$i]);
+        }
+        // for($i = 0; $i < $countKeys; $i++){
+        //     $narray[$i] = json_decode($plotsid[$i]);
+        // }
+        // for($i = 0; $i < $countKeys; $i++){
+        //     $array[] = array( "plotsId"=> $narray[$i], "geometry_rings"=> $nnarray[$i]);
+        // }
+    //    $serialize = json_decode($this->plots);
+    //    $arr=[];
+    //     foreach($serialize as $seria){
+    //         $arr[]=[
+    //             "plotsName" => $seria->plotsName,
+    //             "plotsId" => $seria->plotsId,
+    //             "geometry_ring" => json_decode($seria->geometry_ring)
+    //         ];
+    //     } 
         return [
             'type'=> $this->type,
-            'fieldsID' => $this->fieldsID,
-            'clientID' => $this->clientID,
+            'regionId' => $this->region,
+            'districtId' => $this->district,
+            'clientId' => $this->clientID,
             'clientName' => $this->clientName,
-            'clientBin' => $this->IIN_BIN,
-            'guid' => $this->guid,
-            'cultureID' => $this->cultureID,
+            'clientBin' => $this->iin_bin,
             'cultureName' => $this->cultureName,
+            'cultureId' => $this->cultureID,
             'color' => $this->color,
-            'district' => $this->district,
-            'region' => $this->region,
-            'geometry_rings' => json_decode($this->geometry_rings, true), 
+            'geometry_rings' => json_decode($this->geometry_rings)
         ];
     }
 }

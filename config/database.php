@@ -65,6 +65,20 @@ return [
             ]) : [],
         ],
 
+        // 'mysql' => [
+        //     'driver' => 'sqlsrv',
+        //     'host' => '192.168.1.209',
+        //     'port' => '1433',
+        //     'database' => 'CRM_DWH',
+        //     'username' => 'CRM',
+        //     'password' => "Alem12#$",
+        //     'charset' => 'utf8',
+        //     'collation' => 'utf8_unicode_ci',
+        //     'prefix' => '',
+        //     'prefix_indexes' => true,
+        //     'strict'    => false,
+            
+        // ],
         'mysql' => [
             'driver' => 'sqlsrv',
             'host' => '192.168.1.209',
@@ -72,8 +86,9 @@ return [
             'database' => 'CRM_DWH',
             'username' => 'CRM',
             'password' => "Alem12#$",
-            'charset' => 'utf8',
-            'collation' => 'utf8_unicode_ci',
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            
             'prefix' => '',
             'prefix_indexes' => true,
             'strict'    => false,
@@ -166,6 +181,15 @@ return [
             
         ],
 
+        'mongodb' => [
+            'driver'   => 'mongodb',
+            'host'     => '192.168.1.82',
+            'port'     => '27017',
+            'database' => "MAPS",
+            'username' => "",
+            'password' => ""
+        ],
+
         'AA_DWH' => [
             'driver' => 'sqlsrv',
             'host' => '192.168.1.209',
@@ -179,10 +203,6 @@ return [
             'prefix_indexes' => true,
             'strict'    => false,
         ],
-      
-
-        
-
     ],
 
     /*

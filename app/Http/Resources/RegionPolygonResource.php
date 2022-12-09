@@ -15,10 +15,9 @@ class RegionPolygonResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'id' =>  $this->ID,
+            'id' => $this->regionId,
             'type' => $this->type,
             'name' => $this->NAME,
-            'cato' => $this->regionId,
             'population_area' => $this->population_area,
             'geometry_rings' => json_decode($this->geometry_rings, true)
         ];

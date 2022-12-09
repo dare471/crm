@@ -38,7 +38,7 @@ class ResponseClusterController extends Controller
                     'data' => DistrictPolygonResource::collection($request)
                 ]);
             break;
-            case "clientLands":
+            case "clientLand":
                 return response()->json([
                     'succes' => true,
                     'status' => 201,
@@ -59,11 +59,11 @@ class ResponseClusterController extends Controller
                     'data' => CultureRegionResource::collection($request)
                 ]);
             break;
-            case "clientLand":
+            case "clientLandPlot":
                 return response()->json([
                     'success' => true,
                     'status' => 201,
-                    'header' =>  HeaderClientLandResource::collection($header), 
+                    'header' =>  $header, //HeaderClientLandResource::collection($header), 
                     'data' =>  ClientFieldsPolygonResource::collection($request)
                 ]);
             break;
