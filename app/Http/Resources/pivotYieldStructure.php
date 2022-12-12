@@ -4,7 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class FilterSprCultMaps extends JsonResource
+class pivotYieldStructure extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -15,8 +15,11 @@ class FilterSprCultMaps extends JsonResource
     public function toArray($request)
     {
         return [
-            'cultureId' => $this->id,
-            'cultureName' => $this->nameCult,
+            'type' => 'pivotYieldStructure',
+            'clientIinbin' => $this->OWNER_IIN_BIN,
+            'culture' => $this->CULTURE,
+            'season' => $this->YEAR,
+            'cropCapacity' => $this->CROP_CAPACITY
         ];
     }
 }

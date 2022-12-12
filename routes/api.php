@@ -73,6 +73,8 @@ Route::group([
     Route::post("/mainquery", "MapsController@FilterForMaps");
     Route::post("/history/maps", "HistoryBrowsingController@HistoryBrowsing");
     Route::post("/analytics", "MapsAnalyticsController@AnalyticsMaps");
+    Route::post("/analyse", "ClientAnalyticController@Analyse");
+
     //END
 
     //Api for WEB v2
@@ -80,6 +82,7 @@ Route::group([
     Route::post("/workplace", "WorkSpaceController@Worktable");
     Route::post("/comment", "FeedBackController@CommentToElement");
     Route::post("/contract", "ContractController@Contracts");
+    Route::post("/manager/analyse/user", "StaffController@ManagerAnalyse");
     //END
     
     //api for web

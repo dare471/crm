@@ -97,7 +97,7 @@ class MapsController extends Controller
             $query = DB::table("CRM_SPR_CULTURE as CSC")
             ->leftjoin("CRM_CLIENT_PROPERTIES as CCP", "CCP.CULTURE", "CSC.ID")
             ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCP.CLIENT_INFRO_ID")
-            ->select(DB::raw("'getCulture' as type"),"CSC.ID","CSC.NAME")
+            ->select(DB::raw("'getCulture' as type"),"CSC.ID as cultureId","CSC.NAME as cultureName")
             ->where($typeLevel, $request->regionCato)
             ->groupBy("CSC.ID", "CSC.NAME")
             ->get();
@@ -220,17 +220,20 @@ class MapsController extends Controller
 //* ФИЛЬТР участков под критерий  
         public function FilterForMaps(Request $request){
                 if($request->type == "sprCult"){
-                    $region = substr($request->districtId, 0, 2);
-                    $district = substr($request->districtId, 2, 4);
+                    $region = substr($request->regionId, 0, 2);
+                    $district = substr($request->regionId, 2, 4);
                     $query = DB::table("CRM_SPR_CULTURE as CSC")
                     ->leftjoin("CRM_CLIENT_PROPERTIES as CCR", "CCR.CULTURE", "CSC.ID")
                     ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCR.CLIENT_INFO_ID")
                     ->select(
                         "CSC.ID as id",
                         "CSC.NAME as nameCult"
-                        )
-                    ->where("CCI.REGION", $region)
-                    ->where("CCI.DISTRICT", $district);
+                    );
+                    if($district){
+                        $query->where("CCI.DISTRICT", $district);
+                    }
+                    $query->where("CCI.REGION", $region);
+                    
                     
                     $response = FilterSprCultMaps::collection($query->groupBy("CSC.ID", "CSC.NAME")->get());
                 }
@@ -304,7 +307,6 @@ class MapsController extends Controller
                                 return $response = $query->get();
                         }
                     } 
-                    //FilterMaps::collection($query->get());
                     if($request->clientId){
                         $query = DB::connection("mongodb")->table("clientInfo")
                             ->where("clientId", $request->clientId);
@@ -357,6 +359,3 @@ class MapsController extends Controller
         }
 //* Конец функции
 }
-               
-
-

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Resources\ClientsFieldsPolygonResource;
 use App\Http\Resources\MongoExample;
 use Illuminate\Support\Facades\DB;
+use App\Http\Resources\TopProductManager;
 
 class StaffController extends Controller
 {
@@ -16,7 +17,6 @@ class StaffController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-
     public function UserSPR($id)
     {
         $dbconn = DB::connection('CRM_DWH');
@@ -1208,6 +1208,212 @@ class StaffController extends Controller
             ));
             $response = curl_exec($curl);
             curl_close($curl);
+        }
+    }
+
+
+    public function ManagerAnalyse(Request $request){
+        if($request->type=="manager"){
+            $query = DB::table("CRM_DOGOVOR as CD")
+            ->select(DB::raw("COUNT(*) as countClient, SEZON as season"))
+            ->leftjoin("CRM_USERS as CU", "CU.GUID", "CD.MENEDZHER_GUID")
+            ->where("SEZON", "Сезон 2022")
+            ->where("CU.ID", $request->userId)
+            ->whereIn("KONTRAGENT_GUID", [DB::raw("SELECT CD1.KONTRAGENT_GUID FROM CRM_DOGOVOR CD1 WHERE MENEDZHER_GUID = CD.MENEDZHER_GUID AND SEZON IN ('Сезон 2021', 'Сезон 2020')")])
+            ->groupBy("SEZON")
+            ->get();
+
+            $query2 = DB::table("CRM_DOGOVOR as CD")
+            ->select(DB::raw("COUNT(*) as countClient"))
+            ->leftjoin("CRM_USERS as CU", "CU.GUID", "CD.MENEDZHER_GUID")
+            ->where("SEZON", "Сезон 2022")
+            ->where("CU.ID", $request->userId)
+            ->whereNotIn("KONTRAGENT_GUID", [DB::raw("SELECT CD1.KONTRAGENT_GUID FROM CRM_DOGOVOR CD1 WHERE MENEDZHER_GUID = CD.MENEDZHER_GUID AND SEZON IN ('Сезон 2021', 'Сезон 2020')")])
+            ->get();
+            
+            $querySumOldClient = DB::table("CRM_DOGOVOR as CD")
+            ->select(DB::raw("SUM(CD.SUMMA_KZ_TG) as cahsSum"))
+            ->leftjoin("CRM_USERS as CU", "CU.GUID", "CD.MENEDZHER_GUID")
+            ->where("SEZON", "Сезон 2022")
+            ->where("CU.ID", $request->userId)
+            ->whereIn("KONTRAGENT_GUID", [DB::raw("SELECT CD1.KONTRAGENT_GUID FROM CRM_DOGOVOR CD1 WHERE MENEDZHER_GUID = CD.MENEDZHER_GUID AND SEZON IN ('$request->compareSeason')")])
+            ->get();
+
+            $querySumNewClient = DB::table("CRM_DOGOVOR as CD")
+            ->select(DB::raw("SUM(CD.SUMMA_KZ_TG) as cahsSum"))
+            ->leftjoin("CRM_USERS as CU", "CU.GUID", "CD.MENEDZHER_GUID")
+            ->where("SEZON", "Сезон 2022")
+            ->where("CU.ID", $request->userId)
+            ->whereNotIn("KONTRAGENT_GUID", [DB::raw("SELECT CD1.KONTRAGENT_GUID FROM CRM_DOGOVOR CD1 WHERE MENEDZHER_GUID = CD.MENEDZHER_GUID AND SEZON IN ('$request->compareSeason')")])
+            ->get();
+
+            $queryTP = DB::table("CRM_DOGOVOR as CD")
+            ->leftjoin("CRM_USERS as CU", "CU.GUID", "CD.MENEDZHER_GUID")
+            ->leftjoin("CRM_DOGOVOR_SPETSIFIKATSIYA as CDS", "CDS.DOGOVOR_GUID", "CD.GUID")
+            ->select("NOMENKLATURA as productName", DB::raw("Cast(SUM(KOLICHESTVO) as integer) as productCount"))
+            ->where("SEZON", "Сезон 2022")
+            ->where("cu.ID", $request->userId)
+            ->groupBy("NOMENKLATURA")
+            ->orderByDesc("productCount")
+            ->limit("10")
+            ->get();
+
+            $proccentSumContract = $querySumNewClient[0]->cahsSum / $querySumOldClient[0]->cahsSum * 100 - 100;
+            $proccentNewClient = $query2[0]->countClient / $query[0]->countClient * 100 - 100; 
+
+            return response()->json([
+                "success"=> true,
+                "status"=> 201,
+                "data" => [
+                    "type" => "managerAnalyse",
+                    "compareSeason" => "Сезон 2021",
+                    "currentSeason" => $query[0]->season,
+                    "clientAnalyse" => [
+                        "proccentProfitClient" => (int)$proccentNewClient,
+                        "newCountClient" => (int)$query2[0]->countClient,
+                        "oldCountClient" => (int)$query[0]->countClient,
+                    ],
+                    "contractAnalyse" => [
+                        "proccentProfitContract" => (int)$proccentSumContract,
+                        "newSumContract" => (int)$querySumNewClient[0]->cahsSum,
+                        "oldSumContract" => (int)$querySumOldClient[0]->cahsSum,
+                    ],
+                    "topProduct10" => TopProductManager::collection($queryTP)
+                ]
+            ]);
+        }
+        if($request->type == "region"){
+            $query = DB::table("CRM_DOGOVOR as CD")
+            ->select(DB::raw("COUNT(*) as countClient, SEZON as season"))
+            ->leftjoin("CRM_USERS as CU", "CU.GUID", "CD.MENEDZHER_GUID")
+            ->where("SEZON", "Сезон 2022")
+            ->where("CU.CRM_CATO", $request->regionId)
+            ->whereIn("KONTRAGENT_GUID", [DB::raw("SELECT CD1.KONTRAGENT_GUID FROM CRM_DOGOVOR CD1 WHERE MENEDZHER_GUID = CD.MENEDZHER_GUID AND SEZON IN ('$request->compareSeason')")])
+            ->groupBy("SEZON")
+            ->get();
+
+            $query2 = DB::table("CRM_DOGOVOR as CD")
+            ->select(DB::raw("COUNT(*) as countClient"))
+            ->leftjoin("CRM_USERS as CU", "CU.GUID", "CD.MENEDZHER_GUID")
+            ->where("SEZON", "Сезон 2022")
+            ->where("CU.CRM_CATO", $request->regionId)
+            ->whereNotIn("KONTRAGENT_GUID", [DB::raw("SELECT CD1.KONTRAGENT_GUID FROM CRM_DOGOVOR CD1 WHERE MENEDZHER_GUID = CD.MENEDZHER_GUID AND SEZON IN ('$request->compareSeason')")])
+            ->get();
+            
+            $querySumOldClient = DB::table("CRM_DOGOVOR as CD")
+            ->select(DB::raw("SUM(CD.SUMMA_KZ_TG) as cahsSum"))
+            ->leftjoin("CRM_USERS as CU", "CU.GUID", "CD.MENEDZHER_GUID")
+            ->where("SEZON", "Сезон 2022")
+            ->where("CU.CRM_CATO", $request->regionId)
+            ->whereNotIn("KONTRAGENT_GUID", [DB::raw("SELECT CD1.KONTRAGENT_GUID FROM CRM_DOGOVOR CD1 WHERE MENEDZHER_GUID = CD.MENEDZHER_GUID AND SEZON IN ('$request->compareSeason')")])
+            ->get();
+
+            $querySumNewClient = DB::table("CRM_DOGOVOR as CD")
+            ->select(DB::raw("SUM(CD.SUMMA_KZ_TG) as cahsSum"))
+            ->leftjoin("CRM_USERS as CU", "CU.GUID", "CD.MENEDZHER_GUID")
+            ->where("SEZON", "Сезон 2022")
+            ->where("CU.CRM_CATO", $request->regionId)
+            ->whereIn("KONTRAGENT_GUID", [DB::raw("SELECT CD1.KONTRAGENT_GUID FROM CRM_DOGOVOR CD1 WHERE MENEDZHER_GUID = CD.MENEDZHER_GUID AND SEZON IN ('$request->compareSeason')")])
+            ->get();
+
+            $queryTP = DB::table("CRM_DOGOVOR as CD")
+            ->leftjoin("CRM_USERS as CU", "CU.GUID", "CD.MENEDZHER_GUID")
+            ->leftjoin("CRM_DOGOVOR_SPETSIFIKATSIYA as CDS", "CDS.DOGOVOR_GUID", "CD.GUID")
+            ->select("NOMENKLATURA as productName", DB::raw("Cast(SUM(KOLICHESTVO) as integer) as productCount"))
+            ->where("SEZON", "Сезон 2022")
+            ->where("cu.CRM_CATO", $request->regionId)
+            ->groupBy("NOMENKLATURA")
+            ->orderByDesc("productCount")
+            ->limit("10")
+            ->get();
+
+            $proccentSumContract = $querySumNewClient[0]->cahsSum / $querySumOldClient[0]->cahsSum * 100 - 100;
+            $proccentNewClient = $query2[0]->countClient / $query[0]->countClient * 100 - 100; 
+
+            return response()->json([
+                "success"=> true,
+                "status"=> 201,
+                "data" => [
+                    "type" => "regionAnalyse",
+                    "compareSeason" => "Сезон 2021",
+                    "currentSeason" => $query[0]->season,
+                    "clientAnalyse" => [
+                        "proccentProfitClient" => (int)$proccentNewClient,
+                        "newCountClient" => (int)$query2[0]->countClient,
+                        "oldCountClient" => (int)$query[0]->countClient,
+                    ],
+                    "contractAnalyse" => [
+                        "proccentProfitContract" => (int)$proccentSumContract,
+                        "newSumContract" => (int)$querySumNewClient[0]->cahsSum,
+                        "oldSumContract" => (int)$querySumOldClient[0]->cahsSum,
+                    ],
+                    "topProduct10" => TopProductManager::collection($queryTP)
+                ]
+            ]);
+        }
+        if($request->type == "country"){
+            $query = DB::table("CRM_DOGOVOR as CD")
+            ->select(DB::raw("COUNT(*) as countClient, SEZON as season"))
+            ->leftjoin("CRM_USERS as CU", "CU.GUID", "CD.MENEDZHER_GUID")
+            ->where("SEZON", "Сезон 2022")
+            ->whereIn("KONTRAGENT_GUID", [DB::raw("SELECT CD1.KONTRAGENT_GUID FROM CRM_DOGOVOR CD1 WHERE MENEDZHER_GUID = CD.MENEDZHER_GUID AND SEZON IN ('$request->compareSeason')")])
+            ->groupBy("SEZON")
+            ->get();
+
+            $query2 = DB::table("CRM_DOGOVOR as CD")
+            ->select(DB::raw("COUNT(*) as countClient"))
+            ->leftjoin("CRM_USERS as CU", "CU.GUID", "CD.MENEDZHER_GUID")
+            ->where("SEZON", "Сезон 2022")
+            ->whereNotIn("KONTRAGENT_GUID", [DB::raw("SELECT CD1.KONTRAGENT_GUID FROM CRM_DOGOVOR CD1 WHERE MENEDZHER_GUID = CD.MENEDZHER_GUID AND SEZON IN ('$request->compareSeason')")])
+            ->get();
+            
+            $querySumOldClient = DB::table("CRM_DOGOVOR as CD")
+            ->select(DB::raw("SUM(CD.SUMMA_KZ_TG) as cahsSum"))
+            ->leftjoin("CRM_USERS as CU", "CU.GUID", "CD.MENEDZHER_GUID")
+            ->where("SEZON", "Сезон 2022")
+            ->whereNotIn("KONTRAGENT_GUID", [DB::raw("SELECT CD1.KONTRAGENT_GUID FROM CRM_DOGOVOR CD1 WHERE MENEDZHER_GUID = CD.MENEDZHER_GUID AND SEZON IN ('$request->compareSeason')")])
+            ->get();
+
+            $querySumNewClient = DB::table("CRM_DOGOVOR as CD")
+            ->select(DB::raw("SUM(CD.SUMMA_KZ_TG) as cahsSum"))
+            ->leftjoin("CRM_USERS as CU", "CU.GUID", "CD.MENEDZHER_GUID")
+            ->where("SEZON", "Сезон 2022")
+            ->whereIn("KONTRAGENT_GUID", [DB::raw("SELECT CD1.KONTRAGENT_GUID FROM CRM_DOGOVOR CD1 WHERE MENEDZHER_GUID = CD.MENEDZHER_GUID AND SEZON IN ('$request->compareSeason')")])
+            ->get();
+
+            $queryTP = DB::table("CRM_DOGOVOR as CD")
+            ->leftjoin("CRM_USERS as CU", "CU.GUID", "CD.MENEDZHER_GUID")
+            ->leftjoin("CRM_DOGOVOR_SPETSIFIKATSIYA as CDS", "CDS.DOGOVOR_GUID", "CD.GUID")
+            ->select("NOMENKLATURA as productName", DB::raw("Cast(SUM(KOLICHESTVO) as integer) as productCount"))
+            ->where("SEZON", "Сезон 2022")
+            ->groupBy("NOMENKLATURA")
+            ->orderByDesc("productCount")
+            ->limit("10")
+            ->get();
+
+            $proccentSumContract = $querySumNewClient[0]->cahsSum / $querySumOldClient[0]->cahsSum * 100 - 100;
+            $proccentNewClient = $query2[0]->countClient / $query[0]->countClient * 100 - 100; 
+
+            return response()->json([
+                "success"=> true,
+                "status"=> 201,
+                "data" => [
+                    "type" => "countryAnalyse",
+                    "compareSeason" => "Сезон 2021",
+                    "currentSeason" => $query[0]->season,
+                    "clientAnalyse" => [
+                        "proccentProfitClient" => (int)$proccentNewClient,
+                        "newCountClient" => (int)$query2[0]->countClient,
+                        "oldCountClient" => (int)$query[0]->countClient,
+                    ],
+                    "contractAnalyse" => [
+                        "proccentProfitContract" => (int)$proccentSumContract,
+                        "newSumContract" => (int)$querySumNewClient[0]->cahsSum,
+                        "oldSumContract" => (int)$querySumOldClient[0]->cahsSum,
+                    ],
+                    "topProduct10" => TopProductManager::collection($queryTP)
+                ]
+            ]);
         }
     }
 }

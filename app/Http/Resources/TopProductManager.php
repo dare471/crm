@@ -4,7 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class FilterSprCultMaps extends JsonResource
+class TopProductManager extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -15,8 +15,8 @@ class FilterSprCultMaps extends JsonResource
     public function toArray($request)
     {
         return [
-            'cultureId' => $this->id,
-            'cultureName' => $this->nameCult,
+            "productName" => $this->productName,
+            "productCount" => (int) $this->productCount
         ];
     }
 }
