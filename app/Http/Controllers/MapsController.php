@@ -227,37 +227,36 @@ class MapsController extends Controller
                     ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCR.CLIENT_INFO_ID")
                     ->select(
                         "CSC.ID as id",
-                        "CSC.NAME as nameCult"
+                        "CSC.NAME as nameCult",
+                        DB::raw("count(CCR.ID) as countPlot")
                     );
                     if($district){
                         $query->where("CCI.DISTRICT", $district);
                     }
-                    $query->where("CCI.REGION", $region);
-                    
+                    if($region){
+                        $query->where("CCI.REGION", $region);
+                    }
                     
                     $response = FilterSprCultMaps::collection($query->groupBy("CSC.ID", "CSC.NAME")->get());
                 }
                 if($request->type == "searchIin"){
-                    $region = substr($request->catoID, 0, 2);
-                    $district = substr($request->catoID, 2, 4);
+                    $region = substr($request->districtId, 0, 2);
                     $query = DB::table("CRM_CLIENT_INFO as CCI")
-                    ->leftjoin("CRM_CLIENT_PROPERTIES AS CCP", "CCP.CLIENT_INFO_ID", "CCI.ID")
-                    ->leftjoin("CRM_SPR_CULTURE as CSC", "CSC.ID", "CCP.CULTURE")
+                    ->innerjoin("CRM_CLIENT_PROPERTIES_4326 AS CCP", "CCP.CLIENT_INFO_ID", "CCI.ID")
+                    ->innerjoin("CRM_SPR_CULTURE as CSC", "CSC.ID", "CCP.CULTURE")
                     ->select("CCI.ID as clientId", "CCI.NAME as clientName", "CCI.IIN_BIN as clientIin")
-                    ->where("CCI.IIN_BIN", "LIKE", "$request->clientIin%")
-                    ->where("CCI.REGION", $region)
-                    ->where("CCI.DISTRICT", $district);
+                    ->where("CCI.IIN_BIN", "LIKE", "%$request->clientIin%");
+                    if($request->districtId){
+                        $query->where("CCI.REGION", $request->districtId);
+                    }
                     if($request->culture){
                         $query->whereIn("CCP.CULTURE", $request->culture);
                     }
-                    return response()->json([
-                        "succees" => true,
-                        "status" => 201,
-                        "data" => $query->groupBy("CCI.ID", "CCI.NAME", "CCI.IIN_BIN")->get()
-                    ]);
+                    $rep = $query->groupBy("CCI.ID", "CCI.NAME", "CCI.IIN_BIN")->get();
+                    return response($rep);
                 }
                 if($request->type == "filterMaps"){
-                    $query = DB::table("CRM_CLIENT_PROPERTIES as CCR")
+                    $query = DB::table("CRM_CLIENT_PROPERTIES_4326 as CCR")
                     ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCR.CLIENT_INFO_ID")
                     ->leftjoin("CRM_CLIENT_ID_GUID as CCIG", "CCIG.ID", "CCI.CLIENT_ID")
                     ->leftjoin("CRM_SPR_CULTURE as CSC", "CSC.ID", "CCR.CULTURE")
@@ -294,11 +293,11 @@ class MapsController extends Controller
                 if($request->type == "mainQuery"){
                     if($request->regionId){
                         if($request->cultId){
-                            $query = DB::connection("mongodb")->table("plotsList");
+                            $query = DB::connection("mongodb")->table("PlotsLisatActualAA");
                             if($request->regionId){
-                                $query->where("plotRegion", $request->regionId);
+                                $query->where("regionId", $request->regionId);
                             }
-                            $query->whereIn("plotCult", $request->cultId);
+                            $query->whereIn("cult", $request->cultId);
                             return $query->get();
                         }
                         else{
@@ -308,11 +307,10 @@ class MapsController extends Controller
                         }
                     } 
                     if($request->clientId){
-                        $query = DB::connection("mongodb")->table("clientInfo")
+                        $query = DB::connection("mongodb")->table("clientInfoActual")
                             ->where("clientId", $request->clientId);
                             return $response = $query->get();
                     }
-                    
                 }
                 if($request->type == "getAnalytic"){
                     if($request->regionId){
@@ -323,11 +321,7 @@ class MapsController extends Controller
                             if($request->plotCult){
                                 $query->whereIn("ccp.CULTURE", $request->plotCult);
                             }
-                        return response()->json([
-                            "status" => 201, 
-                            "success" => true, 
-                            "data" => $query->groupBy("type")->get()
-                        ]);
+                        return $query->groupBy("type")->get();
                     }
                     if($request->clientId){
                         $query = DB::table("CRM_CLIENT_PROPERTIES_4326 as ccp")
@@ -337,11 +331,7 @@ class MapsController extends Controller
                         if($request->plotCult){
                             $query->whereIn("ccp.CULTURE", $request->plotCult);
                         }
-                        return response()->json([
-                            "status" => 201, 
-                            "success" => true, 
-                            "data" => $query->groupBy("type")->get()
-                        ]);
+                        return $query->groupBy("type")->get();
                     }
                 }
             if(empty($query)){

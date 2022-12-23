@@ -32,11 +32,7 @@ class ClientAnalyticController extends Controller
         ->where("cci.ID", $request->clientId)
         ->orderByDesc("YEAR")
         ->get();
-        return response()->json([
-            "status" =>  201,
-            "success" => true,
-            "data" => purchaseHistory::collection($query)
-        ]);
+        return  purchaseHistory::collection($query)->all();
    }
    if($request->type == "getAreaStructure"){
         $query = DB::table("CRM_SHYMBULAK_PIVOT_AREA_STRUCTURE as cspa")
@@ -44,22 +40,14 @@ class ClientAnalyticController extends Controller
         ->where("cci.ID", $request->clientId)
         ->orderByDesc("YEAR")
         ->get();
-        return response()->json([
-            "status" =>  201,
-            "success" => true,
-            "data" => areaStructure::collection($query)
-        ]);
+        return  areaStructure::collection($query)->all();
    }
    if($request->type == "getPotentialCult"){
         $query = DB::table("CRM_SHYMBULAK_PIVOT_POTENTIAL_OF_CULTURE as cspp")
         ->leftJoin("CRM_CLIENT_INFO as cci", "cci.IIN_BIN", "cspp.IIN_BIN")
         ->where("cci.ID", $request->clientId)
         ->get();
-        return response()->json([
-            "status" =>  201,
-            "success" => true,
-            "data" =>  potentialCult::collection($query)
-        ]);
+        return  potentialCult::collection($query)->all();
    }
    if($request->type == "getPurchaseHistoryMarket"){
         $query = DB::table("CRM_SHYMBULAK_PIVOT_PURCHASE_HISTORY_BY_MARKET as cspphm")
@@ -67,11 +55,7 @@ class ClientAnalyticController extends Controller
         ->where("cci.ID", $request->clientId)
         ->orderByDesc("YEAR")
         ->get();
-        return response()->json([
-            "status" =>  201,
-            "success" => true,
-            "data" => purchaseHistoryMarket::collection($query)
-        ]);
+        return purchaseHistoryMarket::collection($query)->all();
     }
     if($request->type == "getPivotYieldStructure"){
         $query = DB::table("CRM_SHYMBULAK_PIVOT_YIELD_STRUCTURE as cspys")
@@ -79,32 +63,20 @@ class ClientAnalyticController extends Controller
         ->where("cci.ID", $request->clientId)
         ->orderByDesc("YEAR")
         ->get();
-        return response()->json([
-            "status" =>  201,
-            "success" => true,
-            "data" =>  pivotYieldStructure::collection($query)
-        ]);
+        return  pivotYieldStructure::collection($query)->all();
     }
     if($request->type == "getPivotSubsideRegion"){
         $query = DB::table("CRM_SHYMBULAK_SUBSIDIES_PIVOT as cssp")
         ->where("cssp.CATO", "like", "".$request->regionId."%")
         ->orderByDesc("SEASON")
         ->get();
-        return response()->json([
-            "status" =>  201,
-            "success" => true,
-            "data" => pivotSubsideRegion::collection($query)
-        ]);
+        return pivotSubsideRegion::collection($query)->all();
     }
     if($request->type == "getPivotSubsideCountry"){
         $query = DB::table("CRM_SHYMBULAK_SUBSIDIES_PIVOT_KZ")
         ->orderByDesc("SEASON")
         ->get();
-        return response()->json([
-            "status" =>  201,
-            "success" => true,
-            "data" => pivotSubsideCountry::collection($query)
-        ]);
+        return pivotSubsideCountry::collection($query)->all();
     }
     }
 }

@@ -25,106 +25,53 @@ class ResponseClusterController extends Controller
         if($request->get(0)){
         switch($request->get(0)->type){
             case "region": 
-                return response()->json([
-                    'succes' => true,
-                    'status' => 201,
-                    'data' => RegionPolygonResource::collection($request)
-                ]);
+                return RegionPolygonResource::collection($request)->all();
             break;
             case "district": 
-                return response()->json([
-                    'succes' => true,
-                    'status' => 201,
-                    'data' => DistrictPolygonResource::collection($request)
-                ]);
+                return DistrictPolygonResource::collection($request)->all();
             break;
             case "clientLand":
-                return response()->json([
-                    'succes' => true,
-                    'status' => 201,
-                    'data' => GetClientLandsResource::collection($request) //ClientsFieldsPolygonResource::collection($request)
-                ]);
+                return GetClientLandsResource::collection($request)->all(); //ClientsFieldsPolygonResource::collection($request)
             break;
             case "elevator":
-                return response()->json([
-                    'succes' => true,
-                    'status' => 201,
-                    'data' => ElevatorListResource::collection($request)
-                ]);
+                return ElevatorListResource::collection($request)->all();
             break;
             case "getCulture":
-                return response()->json([
-                    'success' => true,
-                    'status' => 201,
-                    'data' => CultureRegionResource::collection($request)
-                ]);
+               return CultureRegionResource::collection($request)->all();
             break;
             case "clientLandPlot":
-                return response()->json([
-                    'success' => true,
-                    'status' => 201,
-                    'header' =>  $header, //HeaderClientLandResource::collection($header), 
-                    'data' =>  ClientFieldsPolygonResource::collection($request)
-                ]);
+               return ClientFieldsPolygonResource::collection($request)->all();
             break;
             case "clientCulture":
-                return response()->json([
-                    'success' => true,
-                    'status' => 201,
-                    'header' => HeaderClientsCulturesResource::collection($header), 
-                    'data' =>  ClientsFieldsPolygonResource::collection($request)
-                ]);
+                return ClientsFieldsPolygonResource::collection($request)->all();
             break;
             case "landInf":
-                return response()->json([
-                    'success' => true,
-                    'status' => 201,
-                    'header' =>  HeaderLandInfResource::collection($header), 
-                    'data' =>  ClientFieldsGetCultureResource::collection($request)
-                ]);
+                return ClientFieldsGetCultureResource::collection($request)->all();
             break;
             // case "seedPivot": 
             //     return response()->json([
             //         "status" => 201,
             //         "succes" => true,
             //         "data" => $request->current_page
-            //         ]);
+            //         ])->all();
             // break;
             case "mineralPivot": 
-                return response()->json([
-                    "status" => 201,
-                    "succes" => true,
-                    "data" => $request
-                    ]);
+                return $request;
             break;
             case "pesticidePivot": 
-                return response()->json([
-                    "status" => 201,
-                    "succes" => true,
-                    "data" => $request
-                    ]);
+                return $request;
             break;
             case "managerContracts":
-                return response()->json([
-                    "status" => 201,
-                    "succes" => true,
-                    "data" => AllContracts::collection($request)
-                    ]);
+                return  AllContracts::collection($request)->all();
             break;
             case "detailContract":
-                return response()->json([
-                    "succes" => true,
-                    "status" => 201,
-                    "data" => $request,
-                    "specificationContracts" => $header,
-                ]);
+                 return $request;
             break;
             default: 
                 return response()->json([
                     "status" => 201,
                     "succes" => false,
-                    "data" => "Missing data, correct 'type' or error in request body"
-                ]);
+                    "data" => "Missing data, correct 'type' or error in request body"]);
             }
         }
         else{

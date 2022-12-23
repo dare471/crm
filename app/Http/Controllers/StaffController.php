@@ -31,7 +31,7 @@ class StaffController extends Controller
             ,[TELEFON]
             ,[TELEGRAM_ID] FROM [CRM_DWH].[dbo].[CRM_USERS] AS CU
             INNER JOIN [CRM_DWH].[dbo].[CRM_HR] AS CH ON CH.SOTRUDNIK_GUID=CU.FIZICHESKOE_LITSO_GUID
-            WHERE [TELEGRAM_ID]!=0 AND[NAIMENOVANIE]!='telegrambot' AND [SOSTOYANIE]!='Увольнение'  ORDER BY [NAIMENOVANIE] ASC");
+            WHERE [TELEGRAM_ID]!=0 AND[NAIMENOVANIE]!='telegrambot' AND CH.[DOLZHNOST]='Менеджер по продажам' AND [SOSTOYANIE]!='Увольнение'  ORDER BY [NAIMENOVANIE] ASC");
         return response($query);
     }
 
@@ -73,7 +73,7 @@ class StaffController extends Controller
         ,[STAZH]
         ,[TELEGRAM_ID] FROM [CRM_DWH].[dbo].[CRM_USERS] AS CU 
         INNER JOIN [CRM_DWH].[dbo].[CRM_HR] AS CH ON CH.SOTRUDNIK_GUID=CU.FIZICHESKOE_LITSO_GUID
-        WHERE [GUID]=$id ORDER BY [NAIMENOVANIE] ASC");
+        WHERE [ID]=$id ORDER BY [NAIMENOVANIE] ASC");
         return response()->json([
             'user_inf' => $user_inf,
         ]);
@@ -1258,8 +1258,8 @@ class StaffController extends Controller
             ->limit("10")
             ->get();
 
-            $proccentSumContract = $querySumNewClient[0]->cahsSum / $querySumOldClient[0]->cahsSum * 100 - 100;
-            $proccentNewClient = $query2[0]->countClient / $query[0]->countClient * 100 - 100; 
+            $proccentSumContract = $querySumNewClient[0]->cahsSum / ($querySumNewClient[0]->cahsSum + $querySumOldClient[0]->cahsSum) * 100;
+            $proccentNewClient =  $query2[0]->countClient / ($query2[0]->countClient + $query[0]->countClient) * 100; 
 
             return response()->json([
                 "success"=> true,

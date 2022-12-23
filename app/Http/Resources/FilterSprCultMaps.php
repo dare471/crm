@@ -16,7 +16,7 @@ class FilterSprCultMaps extends JsonResource
     {
         return [
             'cultureId' => $this->id,
-            'cultureName' => $this->nameCult,
+            'cultureName' => $this->nameCult." (".$this->countPlot.")",
         ];
     }
 }
