@@ -8,6 +8,7 @@ use App\Http\Resources\ClientsFieldsPolygonResource;
 use App\Http\Resources\MongoExample;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\TopProductManager;
+use App\Http\Resources\UserSPR;
 
 class StaffController extends Controller
 {
@@ -37,21 +38,14 @@ class StaffController extends Controller
 
     public function UserSPRTable($id)
     {
-        $dbconn = DB::connection('CRM_DWH');
-        $query = $dbconn->select("SELECT CONVERT(NVARCHAR(MAX), cu.GUID, 1)as USERS_GUID,
-        cu.ID, 
-        cu.TELEGRAM_ID,
-        NAIMENOVANIE AS FULL_NAME, 
-        DIREKTSYA AS DIRECTION, 
-        DOLZHNOST AS POSITION, 
-        ADRES_E_P AS EMAIL, 
-        TELEFON AS PHONE, 
-        PODRAZDELENIE AS SUBDIVISION, 
-        CRM_CATO  
-        FROM CRM_USERS cu 
-        LEFT JOIN users u on u.email = cu.ADRES_E_P 
-        WHERE u.id = $id");
-        return response($query);
+        $query=DB::table("CRM_USERS as cu")
+        ->leftjoin("users as u", "u.email", "cu.ADRES_E_P")
+        ->select(DB::raw("CONVERT(NVARCHAR(MAX), cu.GUID, 1) as guid"), "cu.ID", 
+        "cu.TELEGRAM_ID", "NAIMENOVANIE", "DIREKTSYA", "DOLZHNOST", "ADRES_E_P", "TELEFON", "PODRAZDELENIE", "CRM_CATO")
+        ->where("u.id", "$id")
+        ->get();
+        
+        return UserSPR::collection($query)->all();
     }
     
     //user api 

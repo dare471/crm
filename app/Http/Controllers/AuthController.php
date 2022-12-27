@@ -106,7 +106,7 @@ class AuthController extends Controller
     protected function respondWithToken($token) 
     {
         return response()->json([
-            'users_data'=>['users_id'=>$this->guard()->user()->id,
+            'user'=>['id'=>$this->guard()->user()->id,
             'email'=>$this->guard()->user()->email,
             'name'=>$this->guard()->user()->name,
             'role'=>$this->guard()->user()->role,

@@ -220,8 +220,8 @@ class MapsController extends Controller
 //* ФИЛЬТР участков под критерий  
         public function FilterForMaps(Request $request){
                 if($request->type == "sprCult"){
-                    $region = substr($request->regionId, 0, 2);
-                    $district = substr($request->regionId, 2, 4);
+                    $region = substr($request->districtId, 0, 2);
+                    $district = substr($request->districtId, 2, 4);
                     $query = DB::table("CRM_SPR_CULTURE as CSC")
                     ->leftjoin("CRM_CLIENT_PROPERTIES as CCR", "CCR.CULTURE", "CSC.ID")
                     ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCR.CLIENT_INFO_ID")
@@ -242,8 +242,8 @@ class MapsController extends Controller
                 if($request->type == "searchIin"){
                     $region = substr($request->districtId, 0, 2);
                     $query = DB::table("CRM_CLIENT_INFO as CCI")
-                    ->innerjoin("CRM_CLIENT_PROPERTIES_4326 AS CCP", "CCP.CLIENT_INFO_ID", "CCI.ID")
-                    ->innerjoin("CRM_SPR_CULTURE as CSC", "CSC.ID", "CCP.CULTURE")
+                    ->join("CRM_CLIENT_PROPERTIES_4326 AS CCP", "CCP.CLIENT_INFO_ID", "CCI.ID")
+                    ->join("CRM_SPR_CULTURE as CSC", "CSC.ID", "CCP.CULTURE")
                     ->select("CCI.ID as clientId", "CCI.NAME as clientName", "CCI.IIN_BIN as clientIin")
                     ->where("CCI.IIN_BIN", "LIKE", "%$request->clientIin%");
                     if($request->districtId){
