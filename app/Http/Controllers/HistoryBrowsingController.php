@@ -7,31 +7,31 @@ class HistoryBrowsingController extends Controller
 {
     public function HistoryBrowsing(Request $request){
         if($request->type == "listBrowsing"){
-            $query = DB::table("CRM_HISTORY_BROWSING")
+            $query = DB::table("CRM_HISTORY_BROWSING as chb")
+            ->leftJoin("CRM_CLIENT_INFO as cci", "cci.ID", "chb.CLIENT_ID")
+            ->leftJoin("CRM_CLIENT_PROPERTIES_4326 as ccp", "ccp.ID", "chb.CLIENT_FIELDS")
             ->select(
-                "ID", 
-                "USER_ID", 
-                "REGION", 
-                "MODE", 
-                "DISTRICT", 
-                "CLIENT_FIELDS"
+                "chb.ID", 
+                "chb.USER_ID", 
+                "chb.REGION",
+                "cci.ADDRESS",
+                "cci.ID as CID",
+                "cci.NAME", 
+                "chb.CLIENT_FIELDS",
+                "ccp.FIELDS"
                 )
-            ->where("USER_ID", $request->userID)
+            ->where("USER_ID", $request->userId)
             ->get();
-            return response()->json([
-                'succes' => true,
-                'status' => 201,
-                'data' => HistoryBrowsingResource::collection($query)
-            ]);
+            return HistoryBrowsingResource::collection($query)->all();
         }
         if($request->type == "createBrowsing"){
             $query = DB::table("CRM_HISTORY_BROWSING")
             ->insert([
-                'USER_ID' => $request->userID,
-                'REGION' => $request->region,
-                'MODE' => $request->mode,
-                'DISTRICT' => $request->district,
-                'CLIENT_FIELDS' => $request->clientFields
+                'USER_ID' => $request->userId,
+                'REGION' => $request->regionId,
+                'DISTRICT' => $request->districtId,
+                'CLIENT_ID' => $request->clientId,
+                'CLIENT_FIELDS' => $request->clientPlotId
             ]);
             return response()->json([
                 'succes' => true,

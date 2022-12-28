@@ -15,12 +15,14 @@ class HistoryBrowsingResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'id' => $this->ID,
-            'userID' => $this->USER_ID,
-            'region'=> $this->REGION,
-            'mode' => $this->MODE,
-            'district' => $this->DISTRICT,
-            'clientFields' => $this->CLIENT_FIELDS,
+            'id' => (int)$this->ID,
+            'userId' => (int)$this->USER_ID,
+            'regionName' => $this->ADDRESS,
+            'regionId'=> (int)$this->REGION,
+            'clientId' => (int)$this->CID,
+            'clientName' => $this->NAME,
+            'clientPlotName' => $this->FIELDS,
+            'clientPlotId' => (int)$this->CLIENT_FIELDS
         ];
     }
 }
