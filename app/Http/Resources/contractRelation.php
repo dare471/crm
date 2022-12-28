@@ -15,7 +15,7 @@ class contractRelation extends JsonResource
     public function toArray($request)
     {
         return [
-            "clientId" => $this->ID,
+            "clientId" => (int)$this->ID,
             "contractName" => $this->NAIMENOVANIE,
             "contractStart" => $this->DATA_NACHALA_DEYSTVIYA,
             "contractEnd" => $this->DATA_OKONCHANIYA_DEYSTVIYA,
@@ -25,7 +25,7 @@ class contractRelation extends JsonResource
             "contractManager" => $this->MENEDZHER,
             "contractSeason" => $this->SEZON,
             "contrDeliveryAddress" => $this->ADRES_DOSTAVKI,
-            "contractSumm" => $this->SUMMA_KZ_TG
+            "contractSumm" => (int)$this->SUMMA_KZ_TG
         ];
     }
 }

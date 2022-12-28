@@ -25,7 +25,7 @@ class managerContract extends JsonResource
             "contractDirection" => $this->DIREKTSYA,
             "contractClientId" => (int)$this->clientId,
             "contractClientName" => $this->KONTRAGENT,
-            "contractClientIin" => $this->IIN_BIN,
+            "contractClientIin" => (int)$this->IIN_BIN,
             "contractSeason" => $this->SEZON,
             "contractConditionPay" => $this->USLOVIYA_OPLATY,
             "contractTypeDelivery" => $this->SPOSOB_DOSTAVKI,

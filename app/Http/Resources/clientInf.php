@@ -15,10 +15,10 @@ class clientInf extends JsonResource
     public function toArray($request)
     {
         return [
-            "clientId" => $this->ID,
+            "clientId" => (int)$this->ID,
             "clientAddress" => $this->ADDRESS,
-            "clientIin" => $this->IIN_BIN,
-            "clientCato" => $this->CATO,
+            "clientIin" => (int)$this->IIN_BIN,
+            "clientCato" => (int)$this->CATO,
             "clientAction" => $this->DEYATELNOST,
             "contactName" => $this->contactName,
             "contactPosition" => $this->POSITION,

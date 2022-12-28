@@ -15,11 +15,11 @@ class clientLRegion extends JsonResource
     public function toArray($request)
     {
         return [
-            "clientId" =>  $this->clientId,
+            "clientId" =>  (int)$this->clientId,
             "clientName" => $this->NAME,
             "clientAddress" => $this->ADDRESS,
-            "clientIin" => $this->IIN_BIN,
-            "clientCato"=>$this->CATO
+            "clientIin" => (int)$this->IIN_BIN,
+            "clientCato"=> (int)$this->CATO
         ];
     }
 }

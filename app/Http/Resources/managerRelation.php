@@ -15,7 +15,7 @@ class managerRelation extends JsonResource
     public function toArray($request)
     {
         return [
-            "managerId" => $this->ID,
+            "managerId" => (int)$this->ID,
             "managerName" => $this->NAIMENOVANIE,
             "managerPosition" => $this->DOLZHNOST,
             "seasonRelation" => $this->SEZON
