@@ -1,11 +1,8 @@
 <?php
-
 namespace App\Http\Controllers;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Http\Resources\HistoryBrowsingResource;
-
-
 class HistoryBrowsingController extends Controller
 {
     public function HistoryBrowsing(Request $request){
@@ -29,14 +26,13 @@ class HistoryBrowsingController extends Controller
         }
         if($request->type == "createBrowsing"){
             $query = DB::table("CRM_HISTORY_BROWSING")
-            ->create([
+            ->insert([
                 'USER_ID' => $request->userID,
                 'REGION' => $request->region,
                 'MODE' => $request->mode,
                 'DISTRICT' => $request->district,
                 'CLIENT_FIELDS' => $request->clientFields
-            ])
-            ->save();
+            ]);
             return response()->json([
                 'succes' => true,
                 'status' => 201,

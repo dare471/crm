@@ -7,7 +7,7 @@ use App\Http\Controllers\ResponseClusterController;
 
 class ContractController extends Controller
 {
-    //Маршрут условий для функции
+    //Маршрут функции
     public function Contracts(Request $request)
     {
         if($request->type == "managerContracts"){
@@ -94,7 +94,6 @@ class ContractController extends Controller
                 )
             ->where("CD.ID", $request->contractId)
             ->get();
-            return (new ResponseClusterController)->ResponseFunction($bodyContract, $specificateContract);
-           
+            return (new ResponseClusterController)->ResponseFunction($bodyContract, $specificateContract); 
     }
 }

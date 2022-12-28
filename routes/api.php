@@ -42,30 +42,14 @@ Route::group([
     ///CLIENT 
     Route::get('/user_data/{id}', 'StaffController@UserSPRTable');
 
-    //ELevator Work table 
-    Route::get('/elevator/table', 'StaffController@WorkTable'); //list all elements
     
     ///test route for maps
     Route::get('/country','StaffController@Region');
-    Route::get('/district/{cato}','StaffController@PolygonCLient');
     Route::get('/region/{kat_f}','StaffController@District');
-    Route::get('/district_new/{cato}', 'StaffController@MongoDb');
     Route::get('/elevatorMarker/', 'StaffController@ElevatorMarker');
-    Route::post('/clientDistrictFields/','StaffController@clientDistrictFields'); /// ----
-    Route::get('/getCultureSpr/{region}', 'StaffController@GetCultureSpr');
-    Route::post('/filterFields','StaffController@FilterClientFields');
-    // // Route::get('/clientPolygons/{guid}', 'StaffController@ClientGuid');
-    Route::post('/clientFieldsCult', 'StaffController@ClientGroupCulture');//---
-    Route::post('/getClientFieldsCult', 'StaffController@ClientFieldGuid'); ///----
-    Route::get('/clientPolygon/{id}', 'StaffController@PolygonDetail');
-    Route::get('/clientField/{id}', 'StaffController@FieldsDetail'); /// ----
     Route::get('/usersmigration', 'StaffController@Migrationalluser');
     //end route for maps 
 
-    // Route FOR TESTING !!!
-    Route::post('/testdo', 'StaffController@todol');
-    Route::post('/testdo/v2/', 'StaffController@TestClientFields');
-    //END
 
     //Route v2 for Maps 
     Route::post("/country/v2/", "MapsController@MainController");
@@ -86,18 +70,14 @@ Route::group([
     //END
     
     //api for web
+    Route::post("/manager/workspace", "WorkSpaceController@UserPlace");
     Route::get('/contracts/{user_id}', 'StaffController@ListOrders');
     Route::get('/contracts/client/{client_id}', 'StaffController@AllOrdersClient');
     Route::get('/contracts/detail/{id}', 'StaffController@DetailOrders');
     Route::get('/contracts/adicional/{id}', 'StaffController@LinkAdicionalOrder');
-    ROute::get('/findbyiin/{iin}', 'StaffController@FindClientName');
     Route::get('/client_info/all/{id}', 'StaffController@Client_list');
     Route::get('/client_info/{guid}', 'StaffController@ClientInfo');
     Route::get('/client_info/managerlink/{id}', 'StaffController@ManagerClientLink');
-    Route::post('/comment/add', 'StaffController@AddCommentContent');
-    Route::post('/comment/update', 'StaffController@UpdateCommentContent');
-    Route::post('/comment/delete', 'StaffController@DeleteCommentContent');
-    Route::post('/comment/list', 'StaffController@ListCommentContent');
     //END
 
 //user controller
