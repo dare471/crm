@@ -92,6 +92,7 @@ class StaffController extends Controller
             'data' => $query
         ]);
     }
+    
   //Route:: /elevatorMarker/ || Method:: GET
   public function ElevatorMarker(){
     $dbconn = DB::connection('CRM_DWH');

@@ -27,6 +27,9 @@ class ResponseClusterController extends Controller
             case "region": 
                 return RegionPolygonResource::collection($request)->all();
             break;
+            case "regionBilling": 
+                return RegionPolygonResource::collection($request)->all();
+            break;
             case "district": 
                 return DistrictPolygonResource::collection($request)->all();
             break;
@@ -55,12 +58,6 @@ class ResponseClusterController extends Controller
             //         "data" => $request->current_page
             //         ])->all();
             // break;
-            case "mineralPivot": 
-                return $request;
-            break;
-            case "pesticidePivot": 
-                return $request;
-            break;
             case "managerContracts":
                 return  AllContracts::collection($request)->all();
             break;

@@ -7,6 +7,10 @@ use App\Http\Resources\clientInf;
 use App\Http\Resources\managerRelation;
 use App\Http\Resources\contractRelation;
 use App\Http\Resources\managerContract;
+use App\Http\Resources\addicionalContract;
+use App\Http\Resources\contractHead;
+use App\Http\Resources\specificationContracts;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -219,7 +223,7 @@ class WorkSpaceController extends Controller
          "cu.DOLZHNOST", 
          "ccig.ID", 
          "cd.KONTRAGENT",
-         "cd.NAIMENOVANIE",
+         "cd.NAIMENOVANIE as contractName",
          "SEZON",
          "cd.USLOVIYA_OPLATY",
          "cd.SPOSOB_DOSTAVKI",
@@ -239,9 +243,9 @@ class WorkSpaceController extends Controller
          ->where("cd.OSNOVNOY_DOGOVOR", $maincontractguid)
          ->get();
          return response()->json([
-            "contractsHead" => $contractHead,
-            "specificationContracts" => $query,
-            "addicionalContract" => $addicionalContract
+            "contractHead" => contractHead::collection($contractHead)->all(),
+            "specificationContract" => specificationContracts::collection($query)->all(),
+            "addicionalContract" => addicionalContract::collection($addicionalContract)->all()
          ]);
       }
       if($request->type == "managerRelation"){

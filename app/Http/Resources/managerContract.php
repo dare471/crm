@@ -30,7 +30,7 @@ class managerContract extends JsonResource
             "contractConditionPay" => $this->USLOVIYA_OPLATY,
             "contractTypeDelivery" => $this->SPOSOB_DOSTAVKI,
             "contractDeliveryAddress" => $this->ADRES_DOSTAVKI,
-            "contractSumm" => (int)$this->SUMMA_KZ_TG
+            "contractSum" => (int)$this->SUMMA_KZ_TG
         ];
     }
 }

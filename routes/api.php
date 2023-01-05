@@ -44,7 +44,7 @@ Route::group([
 
     
     ///test route for maps
-    Route::get('/country','StaffController@Region');
+    //Route::get('/country','StaffController@Region');
     Route::get('/region/{kat_f}','StaffController@District');
     Route::get('/elevatorMarker/', 'StaffController@ElevatorMarker');
     Route::get('/usersmigration', 'StaffController@Migrationalluser');
@@ -52,7 +52,7 @@ Route::group([
 
 
     //Route v2 for Maps 
-    Route::post("/country/v2/", "MapsController@MainController");
+    Route::post("/country", "MapsController@MainController");
     Route::post("/clientFields/v2/", "MapsController@MapsClient");
     Route::post("/mainquery", "MapsController@FilterForMaps");
     Route::post("/history/maps", "HistoryBrowsingController@HistoryBrowsing");

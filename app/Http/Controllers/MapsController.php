@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\FilterMaps;
 use App\Http\Resources\FilterSprCultMaps;
+use App\Http\Resources\getAnalytic;
 use App\Http\Controllers\ResponseClusterController;
 use App\Models\plots;
 
@@ -18,20 +19,37 @@ class MapsController extends Controller
     public function MainController(Request $request)
     {
         if($request->type=='region'){
-            $query = DB::table("CRM_AISGZK_OBLAST_GEO")
-            ->select(DB::raw("'region' as type"), 
-            "ID", 
-            "NAME", 
-            DB::raw("SUBSTRING(KATO, 0, 3) as regionId"),
-            "POPULATION_AREA as population_area",
-            "POPULATION_CITY as population_city",
-            "POPULATION_VILLAGE as population_village",
-            "GEOMETRY_RINGS as  geometry_rings",
-            "KLKOD" 
-            )
-            ->get();
-            return (new ResponseClusterController)->ResponseFunction($query, null);
-            
+            if($request->regionBilling){
+                $query = DB::table("CRM_AISGZK_OBLAST_GEO")
+                ->select(DB::raw("'regionBilling' as type"), 
+                "ID", 
+                "NAME", 
+                "KATO",
+                "POPULATION_AREA as population_area",
+                "POPULATION_CITY as population_city",
+                "POPULATION_VILLAGE as population_village",
+                "GEOMETRY_RINGS as  geometry_rings",
+                "KLKOD" 
+                )
+                ->whereIn('KATO', $request->regionBilling)
+                ->get();
+                return (new ResponseClusterController)->ResponseFunction($query, null);
+            }
+            else{
+                $query = DB::table("CRM_AISGZK_OBLAST_GEO")
+                ->select(DB::raw("'region' as type"), 
+                "ID", 
+                "NAME", 
+                "KATO",
+                "POPULATION_AREA as population_area",
+                "POPULATION_CITY as population_city",
+                "POPULATION_VILLAGE as population_village",
+                "GEOMETRY_RINGS as  geometry_rings",
+                "KLKOD" 
+                )
+                ->get();
+                return (new ResponseClusterController)->ResponseFunction($query, null);
+            }
         }
         if($request->type=='district'){
             $query = DB::table("CRM_AISGZK_RAION_GEO")
@@ -313,26 +331,12 @@ class MapsController extends Controller
                     }
                 }
                 if($request->type == "getAnalytic"){
+                    $query = DB::table("CRM_SHYMBLAK_REGION_STATISTICS")
+                    ->select("YEAR", "REGION", "KATO", "AA_CLIENTS_% as AA_CLIENTS_PROC", "OTHER_CLIENTS_% as OTHER_CLIENTS_PROC", "CLIENTS_KZ", "CLIENTS_AA", "CLIENTS_OTHER", "AA_AREA_% as AA_AREA_PROC", "OTHER_AREA_% as OTHER_AREA_PROC", "AREA_CLIENTS_KZ", "AREA_CLIENTS_AA", "AREA_CLIENTS_OTHER");
                     if($request->regionId){
-                        $query = DB::table("CRM_CLIENT_PROPERTIES_4326 as ccp")
-                        ->leftjoin("CRM_CLIENT_INFO as ci", "ci.ID", "ccp.CLIENT_INFO_ID")
-                        ->select(DB::raw("'getRegion' as type"), DB::raw("SUM(ccp.AREA) as plotVolume"), DB::raw("COUNT(*) as plotCount"))
-                        ->where("ci.REGION", $request->regionId);
-                            if($request->plotCult){
-                                $query->whereIn("ccp.CULTURE", $request->plotCult);
-                            }
-                        return $query->groupBy("type")->get();
+                        $query->whereIn("KATO", $request->regionId);
                     }
-                    if($request->clientId){
-                        $query = DB::table("CRM_CLIENT_PROPERTIES_4326 as ccp")
-                        ->leftjoin("CRM_CLIENT_INFO as ci", "ci.ID", "ccp.CLIENT_INFO_ID")
-                        ->select(DB::raw("'getClientId' as type"), DB::raw("SUM(ccp.AREA) as plotVolume"), DB::raw("COUNT(*) as plotCount"))
-                        ->where("ci.ID", $request->clientId);
-                        if($request->plotCult){
-                            $query->whereIn("ccp.CULTURE", $request->plotCult);
-                        }
-                        return $query->groupBy("type")->get();
-                    }
+                    return getAnalytic::collection($query->orderByDesc("YEAR","REGION")->get())->all();
                 }
             if(empty($query)){
                 return response()->json([
