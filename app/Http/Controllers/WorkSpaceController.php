@@ -361,8 +361,8 @@ class WorkSpaceController extends Controller
             ->insert([
                "VISIT_ID" => $query,
                "CLIENT_ID" => json_decode($p)->clientId,
-               "TYPE_VISIT_ID" =>json_decode($p)->type,
-               "TYPE_MEETING" => json_decode($p)->tMeeting,
+               "TYPE_VISIT_ID" =>json_decode($p)->typeVisit,
+               "TYPE_MEETING" => json_decode($p)->placeMeeting,
                "MEETING_COORDINATE" =>json_decode($p)->coordinate,
                "PLOT" => json_decode($p)->plotId
             ]);
@@ -434,12 +434,19 @@ class WorkSpaceController extends Controller
                "directionMatrix"=> $distance_arr
           ]);
          }
-         if($request->id ==48){
-            $query = DB::table()
+         if($request->id == 48){
+            $query = DB::table("CRM_CLIENT_BUSINESS_PLACE")
             ->insert([
-               ""
+               "CLIENT_ID" => $request->clientId,
+               "NAME" => $request->placeName,
+               "PLACE_ID" => $request->placeId,
+               "COORDINATE" => $request->placeCoordinate
             ]);
-         }
+            return response()->json([
+                'success' => true,
+                'status' => 201,
+            ]);
+         }   
          if($request->handbook == "clientBusinessPoint"){
             $query = DB::table("CRM_SPR_BUSINESS_PLACE")
             ->get();
