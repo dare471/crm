@@ -105,6 +105,22 @@ class MapsController extends Controller
             ->get();
             return (new ResponseClusterController)->ResponseFunction($query, null);
         }
+        if($request->type=='warehouseMarker'){
+            $query = DB::table("CRM_ELEVATOR")
+            ->select(DB::raw("'elevator' as type"),
+            "ID",
+            "NAME", 
+            "BIN", 
+            "LOCATION", 
+            "STATION", 
+            "BIN", 
+            "CONTACTS", 
+            "STORAGE_VOLUME", 
+            "LATITUDE", 
+            "LONGITUDE")
+            ->get();
+            return (new ResponseClusterController)->ResponseFunction($query, null);
+        }
         if($request->type=='getCulture'){
             if($request->typeLevel == 'region'){
                 $typeLevel = 'CSC.REGION';
@@ -122,11 +138,10 @@ class MapsController extends Controller
             return (new ResponseClusterController)->ResponseFunction($query, null);
         }
     }
-//* Конец функции
+//*Конец функции
 
-//* Вывод участков клиентов
+//*Вывод участков клиентов
     public function MapsClient(Request $request){
-
         if($request->type == 'clientLand'){
             $query = DB::table("CRM_CLIENT_PROPERTIES as CCR")
             ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCR.CLIENT_INFO_ID")
@@ -159,9 +174,7 @@ class MapsController extends Controller
             ->where("CLIENT_INFO_ID", $request->clientID)
             ->groupby("CLIENT_INFO_ID")
             ->get();
-            
             return (new ResponseClusterController)->ResponseFunction($query, $headers);
-               
         }
 
         if($request->type == 'cultures'){
@@ -255,15 +268,20 @@ class MapsController extends Controller
                         $query->where("CCI.REGION", $region);
                     }
                     
-                    $response = FilterSprCultMaps::collection($query->groupBy("CSC.ID", "CSC.NAME")->get());
+                    $response = FilterSprCultMaps::collection($query->groupBy("CSC.ID", "CSC.NAME")->get())->all();
                 }
                 if($request->type == "searchIin"){
                     $region = substr($request->districtId, 0, 2);
                     $query = DB::table("CRM_CLIENT_INFO as CCI")
                     ->join("CRM_CLIENT_PROPERTIES_4326 AS CCP", "CCP.CLIENT_INFO_ID", "CCI.ID")
                     ->join("CRM_SPR_CULTURE as CSC", "CSC.ID", "CCP.CULTURE")
-                    ->select("CCI.ID as clientId", "CCI.NAME as clientName", "CCI.IIN_BIN as clientIin")
-                    ->where("CCI.IIN_BIN", "LIKE", "%$request->clientIin%");
+                    ->select("CCI.ID as clientId", "CCI.NAME as clientName", "CCI.IIN_BIN as clientIin");
+                    if($request->clientIin){
+                        $query->where("CCI.IIN_BIN", "LIKE", "%$request->clientIin%");
+                    }
+                    if($request->clientName){
+                        $query->where("CCI.NAME", "LIKE", "%$request->clientName%");
+                    }
                     if($request->districtId){
                         $query->where("CCI.REGION", $request->districtId);
                     }
@@ -320,7 +338,8 @@ class MapsController extends Controller
                         }
                         else{
                             $query = DB::connection("mongodb")->table("AllPlotsClient")
-                                ->where("regionId",  $request->regionId);   
+                                ->where("regionId",  $request->regionId)
+                                ->whereNotIn("clientId", $request->unFollowClients);   
                                 return $response = $query->get();
                         }
                     } 
@@ -345,11 +364,7 @@ class MapsController extends Controller
                     "message" => "error type!"
                 ]);
             }
-            return response()->json([
-                'success' => true,
-                'status' => 201,
-                'data' => $response
-            ]);
+            return $response;
         }
 //* Конец функции
 }

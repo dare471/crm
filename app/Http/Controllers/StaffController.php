@@ -41,7 +41,7 @@ class StaffController extends Controller
         $query=DB::table("CRM_USERS as cu")
         ->leftjoin("users as u", "u.email", "cu.ADRES_E_P")
         ->select(DB::raw("CONVERT(NVARCHAR(MAX), cu.GUID, 1) as guid"), "cu.ID", 
-        "cu.TELEGRAM_ID", "NAIMENOVANIE", "DIREKTSYA", "DOLZHNOST", "ADRES_E_P", "TELEFON", "PODRAZDELENIE", "CRM_CATO")
+        "cu.TELEGRAM_ID", "NAIMENOVANIE", "DIREKTSYA", "DOLZHNOST", "ADRES_E_P", "PODRAZDELENIE", "CRM_CATO")
         ->where("u.id", "$id")
         ->get();
         return UserSPR::collection($query)->all();
@@ -71,10 +71,11 @@ class StaffController extends Controller
             'user_inf' => $user_inf,
         ]);
     }
-///Maps api start 
-    // Route:: /country || Method:: GET
-    public function Region()
-    {
+
+
+    ///Maps api start 
+    //Route:: /country || Method:: GET
+    public function Region(){
         $dbconn = DB::connection('CRM_DWH');
         $query = $dbconn->select("
         SELECT TOP (14) 'region' as type,[ID] as id

@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Http\Controllers;
+
+use App\Http\Resources\getAnalyticsForClient;
 use Illuminate\Support\Facades\DB; 
 use Illuminate\Http\Request;
 
@@ -128,8 +130,21 @@ class MapsAnalyticsController extends Controller
                 //return (new ResponseClusterController)->ResponseFunction($query, null);
 
         }
-        if($request->type == "clientPivot"){
-            
+        if($request->type == "getAnalyticsForClient"){
+            $query = DB::table("CRM_CLIENT_INFO as CCI")
+            ->select(DB::raw("SUM(CSS.SUM_SUBSIDIES) as sumSubsClient"), DB::raw("(SELECT SUM(CSS2.SUM_SUBSIDIES) as SUMSUBCIDES FROM CRM_CLIENT_INFO CCI2
+            LEFT JOIN CRM_SHYMBULAK_SEEDS CSS2 ON CSS2.APPLICANT_IIN_BIN=CCI2.IIN_BIN
+            WHERE CCI2.ID NOT IN ($request->clientId) AND CCI2.REGION = CCI.REGION and CSS2.YEAR = CSS.YEAR
+            GROUP BY CSS2.YEAR) as difSumSubcides"), "YEAR", "SEEDS_NAME", "CCI.REGION", DB::raw("SUM(VOLUME) as sumVolumeClient"), DB::raw("(SELECT SUM(CSS2.VOLUME) as volume FROM CRM_CLIENT_INFO CCI2
+            LEFT JOIN CRM_SHYMBULAK_SEEDS CSS2 ON CSS2.APPLICANT_IIN_BIN=CCI2.IIN_BIN
+            WHERE CCI2.ID NOT IN ($request->clientId) AND CCI2.REGION = CCI.REGION and CSS2.YEAR = CSS.YEAR
+            GROUP BY CSS2.YEAR) as difSumVolume"),  "CULTURE")
+            ->leftJoin("CRM_SHYMBULAK_SEEDS as CSS", "CSS.APPLICANT_IIN_BIN", "CCI.IIN_BIN")
+            ->where("CCI.ID", $request->clientId)
+            ->groupBy("YEAR", "SEEDS_NAME",  "CULTURE", "CCI.REGION")
+            ->get();
+
+            return getAnalyticsForClient::collection($query)->all();
         }
     }
 }

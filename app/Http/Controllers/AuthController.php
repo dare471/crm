@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\DB; 
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -93,9 +94,10 @@ class AuthController extends Controller
             'token_user'=>['users_id'=>$this->guard()->user()->id,
             'email'=>$this->guard()->user()->email,
             'name'=>$this->guard()->user()->name,
-            'role'=>$this->guard()->user()->role,
+            'access_availability'=>json_decode($this->guard()->user()->access_availability),
             'active'=>$this->guard()->user()->active,
-            'regionBilling'=>$this->guard()->user()->region_belongs,
+            'subscribesRegion'=>$this->guard()->user()->region_belongs,
+            'unFollowClients'=>$this->guard()->user()->unfollowClient,
             'work_position'=>$this->guard()->user()->work_position,
             'status'=> true,
             'token' => $token,
@@ -107,14 +109,25 @@ class AuthController extends Controller
 
     protected function respondWithToken($token) 
     {
+        $arr=array();
+        $query = DB::table("CRM_CLIENT_TO_VISIT")
+        ->select("CLIENT_ID")
+        ->where("USER_ID", $this->guard()->user()->id)
+        ->get();
+        foreach($query as $q){
+            array_push($arr, (int)$q->CLIENT_ID);
+        }
+
         return response()->json([
             'user'=>['id'=>$this->guard()->user()->id,
             'email'=>$this->guard()->user()->email,
             'name'=>$this->guard()->user()->name,
-            'role'=>$this->guard()->user()->role,
+            'access_availability'=>json_decode($this->guard()->user()->access_availability),
             'workPosition'=>$this->guard()->user()->work_position,
             'active'=>(int)$this->guard()->user()->activated,
-            'regionBilling'=>json_decode($this->guard()->user()->region_belongs)->region,
+            'unFollowClients'=>json_decode($this->guard()->user()->unfollowClient)->clientId,
+            'favoriteClients' => $arr,
+            'subscribesRegion'=>json_decode($this->guard()->user()->region_belongs)->region
         ],
             'status'=> true,
             'token' => $token,

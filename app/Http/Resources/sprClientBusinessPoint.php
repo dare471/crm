@@ -4,7 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class UserSPR extends JsonResource
+class sprClientBusinessPoint extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -15,15 +15,8 @@ class UserSPR extends JsonResource
     public function toArray($request)
     {
         return [
-            "guid" => $this->guid,
             "id" => (int)$this->ID,
-            "telegramId" => (int)$this->TELEGRAM_ID,
-            "fullName" => $this->NAIMENOVANIE,
-            "direction" => $this->DIREKTSYA, 
-            "position" => $this->DOLZHNOST,
-            "email" => $this->ADRES_E_P,
-            "subDivision" => $this->PODRAZDELENIE,
-            "crmCato" => $this->CRM_CATO
+            "name" => $this->NAME
         ];
     }
 }

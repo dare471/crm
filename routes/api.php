@@ -48,6 +48,7 @@ Route::group([
     Route::get('/region/{kat_f}','StaffController@District');
     Route::get('/elevatorMarker/', 'StaffController@ElevatorMarker');
     Route::get('/usersmigration', 'StaffController@Migrationalluser');
+
     //end route for maps 
 
 
@@ -58,7 +59,7 @@ Route::group([
     Route::post("/history/maps", "HistoryBrowsingController@HistoryBrowsing");
     Route::post("/analytics", "MapsAnalyticsController@AnalyticsMaps");
     Route::post("/analyse", "ClientAnalyticController@Analyse");
-
+    Route::post("/weebhook/user", "UserSettingsController@WebhookParametrs");
     //END
 
     //Api for WEB v2
@@ -67,10 +68,11 @@ Route::group([
     Route::post("/comment", "FeedBackController@CommentToElement");
     Route::post("/contract", "ContractController@Contracts");
     Route::post("/manager/analyse/user", "StaffController@ManagerAnalyse");
+    Route::post("/user/setting", "UserSettingsController@UserSettings");
+    Route::post("/manager/workspace", "WorkSpaceController@UserPlace");
     //END
     
     //api for web
-    Route::post("/manager/workspace", "WorkSpaceController@UserPlace");
     Route::get('/contracts/{user_id}', 'StaffController@ListOrders');
     Route::get('/contracts/client/{client_id}', 'StaffController@AllOrdersClient');
     Route::get('/contracts/detail/{id}', 'StaffController@DetailOrders');

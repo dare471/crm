@@ -8,14 +8,19 @@ use App\Http\Resources\managerRelation;
 use App\Http\Resources\contractRelation;
 use App\Http\Resources\managerContract;
 use App\Http\Resources\addicionalContract;
+use App\Http\Resources\clientsRFavoriteList;
 use App\Http\Resources\contractHead;
+use App\Http\Resources\plannedMeeting;
 use App\Http\Resources\specificationContracts;
+use App\Http\Resources\sprClientBusinessPoint;
+use Carbon\Traits\Timestamp;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class WorkSpaceController extends Controller
 {
+   use Timestamp;
    public function Contracts(Request $request)
     {
         if($request->type == "managerContracts"){
@@ -42,8 +47,10 @@ class WorkSpaceController extends Controller
          'Не отгружено AS NOT_SHIPPED',
          'Стоки 2021 AS STOCKED_2021',
          'Стоки 2022 AS STOCKED_2022',
+         'Стоки 2023 AS STOCKED_2023',
          'Поступление_2021 AS ADMISSION_2021',
-         'Поступление_2022 AS ADMISSION_2022')
+         'Поступление_2022 AS ADMISSION_2022',
+         'Поступление_2023 as ADMISSION_2023')
          ->get();
          return response()->json([
             "succes" => true,
@@ -308,9 +315,136 @@ class WorkSpaceController extends Controller
          "cd.SUMMA_KZ_TG")
          ->where("cci.CLIENT_ID", $request->clientId)
          ->where("cd.OSNOVNOY_DOGOVOR", "")
-         ->whereIn("SEZON", ['Сезон 2022', 'Сезон 2021'])
+         ->whereIn("SEZON", ['Сезон 2023','Сезон 2022', 'Сезон 2021'])
          ->get();
          return response($query);
+      }
+      if($request->type == "addToFavorites"){
+         $query = DB::table("CRM_CLIENT_TO_VISIT")
+         ->insert([
+            "USER_ID" => $request->userId, 
+            "CLIENT_ID" => $request->clientId
+         ]);
+         return response()->json([
+            "message" => "Client to favorites"
+         ]);
+      }
+      if($request->type == "deleteToFavorites"){
+         $query = DB::table("CRM_CLIENT_TO_VISIT")
+         ->where("CLIENT_ID", $request->clientId)
+         ->where("USER_ID", $request->userId)
+         ->delete();
+         return response()->json([
+            "message" => "Client Delete to favorites"
+         ]);
+      }
+      if($request->type == "clientsFavoriteList"){
+         $query = DB::table("CRM_CLIENT_TO_VISIT as cctv")
+         ->leftJoin("CRM_CLIENT_INFO as cci", "cci.ID", "cctv.CLIENT_ID")
+         ->select("cctv.ID", "cctv.CLIENT_ID", "cci.NAME", "cci.IIN_BIN", "cci.ADDRESS")
+         ->where("USER_ID", $request->userId)
+         ->get();
+         return clientsRFavoriteList::collection($query)->all();
+      }
+      if($request->type == "addDateToVisit"){
+         $query = DB::table("CRM_VISIT_TO_DATE")
+         ->insertGetId([
+            "USER_ID" => $request->userId,
+            "CLIENT_ID" => JSON_ENCODE($request->properties),
+            "DATE_TO_VISIT" => $request->dateToVisit
+         ]);
+         $arr = $request->properties;
+         $i=0;
+         foreach($arr as $a){
+            $p=json_encode($a, true);
+            $query2 = DB::table("CRM_VISIT_TO_DATE_PROPERTIES")
+            ->insert([
+               "VISIT_ID" => $query,
+               "CLIENT_ID" => json_decode($p)->clientId,
+               "TYPE_VISIT_ID" =>json_decode($p)->type,
+               "TYPE_MEETING" => json_decode($p)->tMeeting,
+               "MEETING_COORDINATE" =>json_decode($p)->coordinate,
+               "PLOT" => json_decode($p)->plotId
+            ]);
+            
+         }
+         return response()->json([
+           "message" => "Meeting to save"
+         ]);
+      }
+      if($request->type == "plannedMeeting"){
+         $query = DB::table("CRM_VISIT_TO_DATE as cdtv")
+         ->select("cdtv.DATE_TO_VISIT", "cdtv.ID", "CLIENT_ID", "css.NAME")
+         ->leftJoin("CRM_SPR_STATUS as css", "css.ID", "cdtv.STATUS")
+         ->where("USER_ID", $request->userId)
+         ->get();
+         $arr=[];
+         $ar=[];
+         $a=[];
+         foreach($query as $q){
+            $clientId = json_decode($q->CLIENT_ID);
+            $query2 = DB::table("CRM_VISIT_TO_DATE_PROPERTIES as cdtvp")
+            ->where("cdtvp.VISIT_ID", $q->ID)
+            ->get();
+            foreach($query2 as $c){
+               $query=DB::table("CRM_CLIENT_INFO as cci")
+               ->leftJoin("CRM_VISIT_TO_DATE_PROPERTIES as cdtvp", "cdtvp.CLIENT_ID", "cci.ID")
+               ->leftJoin("CRM_SPR_TYPE_VISIT as cstv", "cstv.ID", "cdtvp.TYPE_VISIT_ID")
+               ->leftJoin("CRM_SPR_TYPE_MEETING as cstm", "cdtvp.TYPE_MEETING", "cstm.ID")
+               ->select("cci.ID", "cci.NAME", "IIN_BIN", "ADDRESS", "cdtvp.TYPE_VISIT_ID as visitId", "cstv.NAME as visitName", "cstm.ID as meetingId", "cstm.NAME as meetingName", "cdtvp.PLOT as plotId")
+               ->where("cdtvp.VISIT_ID", $q->ID)
+               ->where("cci.ID", $c->CLIENT_ID)
+               ->get();
+            array_push($ar, $query[0]);
+            }
+            array_push($arr, 
+            [
+               "id" => (int)$q->ID, "dateToVisit" => $q->DATE_TO_VISIT, "statusVisit" => $q->NAME, "clients"=>plannedMeeting::collection($ar)->all()
+            ]
+         );
+         $ar= array();
+         }
+        return $arr;
+      }
+      if($request->type == "choiceMeetingPlace"){
+         if($request->id == 40){
+            $query = DB::connection("mongodb")
+            ->table("AllPlotsClient")
+            ->where("clientId", $request->clientId)
+            ->get();
+            return $query;
+         }
+         if($request->id == 44){
+            $query = DB::table("CRM_CLIENT_INFO")
+            ->select("ADDRESS as clientAddress")
+            ->where("ID", $request->clientId)
+            ->get();
+
+            $to = urlencode("г.Кокшетау, Северная промзона, У107");
+            $from = urlencode($query[0]->clientAddress);
+
+            $from_coord = file_get_contents('https://maps.google.com/maps/api/geocode/json?address='.$from.'&key=AIzaSyA86O2e55O4nvcr342va66R2PXJYxBVjXo');
+            $from_coordinate = json_decode($from_coord, true);
+            $f=$from_coordinate['results'][0]['geometry']['location'];
+
+            $distance_data = file_get_contents('https://maps.googleapis.com/maps/api/distancematrix/json?&origins='.$to.'&destinations='.$from.'&key=AIzaSyA86O2e55O4nvcr342va66R2PXJYxBVjXo');
+            $distance_arr = json_decode($distance_data);
+            return response()->json([
+               "clientCoordinate" => $f,
+               "directionMatrix"=> $distance_arr
+          ]);
+         }
+         if($request->id ==48){
+            $query = DB::table()
+            ->insert([
+               ""
+            ]);
+         }
+         if($request->handbook == "clientBusinessPoint"){
+            $query = DB::table("CRM_SPR_BUSINESS_PLACE")
+            ->get();
+            return sprClientBusinessPoint::collection($query)->all();
+         }
       }
    }  
 }

@@ -67,7 +67,7 @@ return [
 
         // 'mysql' => [
         //     'driver' => 'sqlsrv',
-        //     'host' => '192.168.1.209',
+        //     'host' => '10.200.100.24',
         //     'port' => '1433',
         //     'database' => 'CRM_DWH',
         //     'username' => 'CRM',
@@ -81,7 +81,7 @@ return [
         // ],
         'mysql' => [
             'driver' => 'sqlsrv',
-            'host' => '192.168.1.209',
+            'host' => '10.200.100.24',
             'port' => '1433',
             'database' => 'CRM_DWH',
             'username' => 'CRM',
@@ -111,7 +111,7 @@ return [
 
         'AA_DWH_X' => [
             'driver' => 'sqlsrv',
-            'host' => '192.168.1.209',
+            'host' => '10.200.100.24',
             'port' => '1433',
             'database' => 'AA_DWH_X',
             'username' => 'CRM',
@@ -125,7 +125,7 @@ return [
 
         'L1_X' => [
             'driver' => 'sqlsrv',
-            'host' => '192.168.1.209',
+            'host' => '10.200.100.24',
             'port' => '1433',
             'database' => 'L1_X',
             'username' => 'CRM',
@@ -139,7 +139,7 @@ return [
 
         'L0' => [
             'driver' => 'sqlsrv',
-            'host' => '192.168.1.209',
+            'host' => '10.200.100.24',
             'port' => '1433',
             'database' => 'L0',
             'username' => 'CRM',
@@ -153,7 +153,7 @@ return [
 
         'CRM_DWH' => [
             'driver' => 'sqlsrv',
-            'host' => '192.168.1.209',
+            'host' => '10.200.100.24',
             'port' => '1433',
             'database' => 'CRM_DWH',
             'username' => 'CRM',
@@ -167,7 +167,7 @@ return [
         
         'L1' => [
             'driver' => 'sqlsrv',
-            'host' => '192.168.1.209',
+            'host' => '10.200.100.24',
             'port' => '1433',
             'database' => 'L1',
             'username' => 'CRM',
@@ -183,7 +183,7 @@ return [
 
         'mongodb' => [
             'driver'   => 'mongodb',
-            'host'     => '192.168.1.82',
+            'host'     => '10.200.101.27',
             'port'     => '27017',
             'database' => "MAPS",
             'username' => "",
@@ -192,7 +192,7 @@ return [
 
         'AA_DWH' => [
             'driver' => 'sqlsrv',
-            'host' => '192.168.1.209',
+            'host' => '10.200.100.24',
             'port' => '1433',
             'database' => 'AA_DWH',
             'username' => 'CRM',
