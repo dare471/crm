@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\clientLRegion;
 use App\Http\Resources\clientInf;
 use App\Http\Resources\managerRelation;
@@ -350,7 +351,7 @@ class WorkSpaceController extends Controller
          $query = DB::table("CRM_VISIT_TO_DATE")
          ->insertGetId([
             "USER_ID" => $request->userId,
-            "CLIENT_ID" => JSON_ENCODE($request->properties),
+            "CLIENT_ID" => json_encode($request->properties),
             "DATE_TO_VISIT" => $request->dateToVisit
          ]);
          $arr = $request->properties;
@@ -364,7 +365,9 @@ class WorkSpaceController extends Controller
                "TYPE_VISIT_ID" =>json_decode($p)->typeVisit,
                "TYPE_MEETING" => json_decode($p)->placeMeeting,
                "MEETING_COORDINATE" =>json_decode($p)->coordinate,
-               "PLOT" => json_decode($p)->plotId
+               "PLOT" => json_decode($p)->plotId,
+               "DURATION" => json_decode($p)->duration,
+               "DISTANCE" => json_decode($p)->distance
             ]);
             
          }
@@ -453,5 +456,13 @@ class WorkSpaceController extends Controller
             return sprClientBusinessPoint::collection($query)->all();
          }
       }
-   }  
+   }
+   // public function __construct()
+   // {
+   //     $this->middleware('auth:api');
+   // }
+
+   // protected function guard() {
+   //     return Auth::guard();
+   // }
 }
