@@ -3,7 +3,7 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
-
+use Carbon\Carbon;
 class plannedMeeting extends JsonResource
 {
     /**
@@ -22,6 +22,7 @@ class plannedMeeting extends JsonResource
                 "visitName" => $this->visitName,
                 "visitId" => (int)$this->visitId,
                 "meetingId" => (int)$this->meetingId,
+                "meetingTime" => $this->timeMeeting,
                 "meetingName" => $this->meetingName,
                 "plotId" => (int)$this->plotId   
         ];

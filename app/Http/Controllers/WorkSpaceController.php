@@ -13,7 +13,10 @@ use App\Http\Resources\clientsRFavoriteList;
 use App\Http\Resources\contractHead;
 use App\Http\Resources\plannedMeeting;
 use App\Http\Resources\specificationContracts;
+use App\Http\Resources\getMainInfCli;
 use App\Http\Resources\sprClientBusinessPoint;
+use App\Http\Resources\getContracts;
+use App\Http\Resources\getSubcides;
 use Carbon\Traits\Timestamp;
 
 use Illuminate\Http\Request;
@@ -394,7 +397,7 @@ class WorkSpaceController extends Controller
                ->leftJoin("CRM_VISIT_TO_DATE_PROPERTIES as cdtvp", "cdtvp.CLIENT_ID", "cci.ID")
                ->leftJoin("CRM_SPR_TYPE_VISIT as cstv", "cstv.ID", "cdtvp.TYPE_VISIT_ID")
                ->leftJoin("CRM_SPR_TYPE_MEETING as cstm", "cdtvp.TYPE_MEETING", "cstm.ID")
-               ->select("cci.ID", "cci.NAME", "IIN_BIN", "ADDRESS", "cdtvp.TYPE_VISIT_ID as visitId", "cstv.NAME as visitName", "cstm.ID as meetingId", "cstm.NAME as meetingName", "cdtvp.PLOT as plotId")
+               ->select("cci.ID", "cci.NAME", "IIN_BIN", "ADDRESS", "cdtvp.TYPE_VISIT_ID as visitId", "cdtvp.TIME_MEETING as timeMeeting", "cstv.NAME as visitName", "cstm.ID as meetingId", "cstm.NAME as meetingName", "cdtvp.PLOT as plotId")
                ->where("cdtvp.VISIT_ID", $q->ID)
                ->where("cci.ID", $c->CLIENT_ID)
                ->get();
@@ -426,6 +429,10 @@ class WorkSpaceController extends Controller
             $to = urlencode("г.Кокшетау, Северная промзона, У107");
             $from = urlencode($query[0]->clientAddress);
 
+            $to_coord = file_get_contents('https://maps.google.com/maps/api/geocode/json?address='.$to.'&key=AIzaSyA86O2e55O4nvcr342va66R2PXJYxBVjXo');
+            $to_coordinate = json_decode($to_coord, true);
+            $t=$to_coordinate['results'][0]['geometry']['location'];
+
             $from_coord = file_get_contents('https://maps.google.com/maps/api/geocode/json?address='.$from.'&key=AIzaSyA86O2e55O4nvcr342va66R2PXJYxBVjXo');
             $from_coordinate = json_decode($from_coord, true);
             $f=$from_coordinate['results'][0]['geometry']['location'];
@@ -433,6 +440,7 @@ class WorkSpaceController extends Controller
             $distance_data = file_get_contents('https://maps.googleapis.com/maps/api/distancematrix/json?&origins='.$to.'&destinations='.$from.'&key=AIzaSyA86O2e55O4nvcr342va66R2PXJYxBVjXo');
             $distance_arr = json_decode($distance_data);
             return response()->json([
+               "officeCoordinate" => $t,
                "clientCoordinate" => $f,
                "directionMatrix"=> $distance_arr
           ]);
@@ -454,6 +462,103 @@ class WorkSpaceController extends Controller
             $query = DB::table("CRM_SPR_BUSINESS_PLACE")
             ->get();
             return sprClientBusinessPoint::collection($query)->all();
+         }
+      }
+      if($request->type == "changeVisit"){
+         if($request->action == "setTime"){
+            $query = DB::table("CRM_VISIT_TO_DATE_PROPERTIES")
+            ->where("ID", $request->propId)
+            ->update([
+               "TIME_MEETING"=> $request->timeMeeting,
+            ]);
+            return response()->json([
+               "$request->propId, set to time"
+            ]);
+         }
+         if($request->action == "deleteClient"){
+            $query = DB::table("CRM_VISIT_TO_DATE_PROPERTIES")
+            ->where("ID", $request->propId)
+            ->delete();
+            return response()->json([
+               "$request->propId, delete"
+            ]);
+         }  
+      }
+      if($request->type == "profileClient"){
+         if($request->action == "getMainInf"){
+            $query = DB::table("CRM_CLIENT_INFO as cci")
+            ->where("cci.ID", $request->clientId)
+            ->get();
+            return getMainInfCli::collection($query)->all();
+         }
+         if($request->action == "getMngVisit"){
+            $query = DB::table("CRM_VISIT_TO_DATE_PROPERTIES as cvtdp")
+            ->leftJoin("CRM_VISIT_TO_DATE as cvtd", "cvtd.ID", "cvtdp.VISIT_ID")
+            ->where("cvtdp.CLIENT_ID", $request->clientId)
+            ->get();
+            return response($query);
+         }
+         if($request->action == "getContracts"){
+            $query = DB::table("CRM_DOGOVOR as cd")
+            ->leftJoin("CRM_CLIENT_ID_GUID as ccig", "ccig.GUID", "cd.GUID")
+            ->where("ccig.ID", $request->clientId)
+            ->paginate();
+            if($query->isEmpty()){
+               return response()->json([
+                 "message" =>  "didn't contracts",
+                 "status" => false
+               ]);
+            }
+            else{
+               return getContracts::collection($query);
+            }
+         }
+         if($request->action == "getSubcides"){
+            $query = DB::table("CRM_SHYMBULAK_SUBSIDIES as css")
+            ->leftJoin("CRM_CLIENT_INFO as cci", "cci.IIN_BIN", "css.APPLICANT_IIN_BIN")
+            ->where("cci.ID", $request->clientId)
+            ->get();
+            return getSubcides::collection($query)->all();
+         }
+         if($request->action == "setContacts"){
+            $query = DB::table("CRM_CLIENT_CONTACTS")
+            ->where("CLIENT_ID", $request->clientId)
+            ->where("ID", $request->contactId);
+            if($request->position){
+               $query->update([
+                  "POSITION" => $request->position,
+               ]);
+            }
+            if($request->name){
+               $query->update([
+                  "NAME" => $request->name
+               ]);
+            }
+            if($request->phoneNumber){
+               $query->update([
+                  "PHONE_NUMBER" => $request->phoneNumber
+               ]);
+            }
+            if($request->email){
+               $query->update([
+                  "EMAIL" => $request->email
+               ]);
+            }
+            return response()->json([
+               "message" => "Records update",
+               "status" => true
+            ]);;
+         }
+         if($request->action == "setMainInf"){
+            $query = DB::table("CRM_CLIENT_INFO")
+            ->where("ID", $request->clientId)
+            ->update([
+               "ADDRESS" => $request->address
+            ]);
+            return response()->json([
+               "message" => "Record update",
+               "status" => true
+            ]);
          }
       }
    }
