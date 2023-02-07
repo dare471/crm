@@ -183,7 +183,7 @@ return [
 
         'mongodb' => [
             'driver'   => 'mongodb',
-            'host'     => '10.200.101.27',
+            'host'     => '10.200.100.26',
             'port'     => '27017',
             'database' => "MAPS",
             'username' => "",

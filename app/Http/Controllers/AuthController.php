@@ -59,7 +59,7 @@ class AuthController extends Controller
         $user = User::create(
             array_merge($validator->validated(), ['password' => bcrypt($request->password)])
         );
-        $token_validity = (24*60); //24ч*60м
+        $token_validity = (24*1); //24ч*60м
 
         $this->guard()->factory()->setTTL($token_validity);
         if(!$token = $this->guard()->attempt($validator->validated())) 
@@ -102,7 +102,7 @@ class AuthController extends Controller
             'status'=> true,
             'token' => $token,
             'token_type' => 'bearer',
-            'token_validity' => ($this->guard()->factory()->getTTL() * 60),
+            'token_validity' => ($this->guard()->factory()->getTTL() * 1),
             ]]);
     }
 
@@ -132,7 +132,7 @@ class AuthController extends Controller
             'status'=> true,
             'token' => $token,
             'token_type' => 'bearer',
-            'token_validity' => ($this->guard()->factory()->getTTL() * 60),
+            'token_validity' => ($this->guard()->factory()->getTTL() * 1),
         ]);
     }
 

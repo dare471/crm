@@ -16,7 +16,9 @@ use App\Http\Resources\specificationContracts;
 use App\Http\Resources\getMainInfCli;
 use App\Http\Resources\sprClientBusinessPoint;
 use App\Http\Resources\getContracts;
+use App\Http\Resources\getLastContract;
 use App\Http\Resources\getSubcides;
+use App\Http\Resources\getSuppMngr;
 use Carbon\Traits\Timestamp;
 
 use Illuminate\Http\Request;
@@ -372,7 +374,6 @@ class WorkSpaceController extends Controller
                "DURATION" => json_decode($p)->duration,
                "DISTANCE" => json_decode($p)->distance
             ]);
-            
          }
          return response()->json([
            "message" => "Meeting to save"
@@ -451,7 +452,7 @@ class WorkSpaceController extends Controller
                "CLIENT_ID" => $request->clientId,
                "NAME" => $request->placeName,
                "PLACE_ID" => $request->placeId,
-               "COORDINATE" => $request->placeCoordinate
+               "COORDINATE" => json_encode($request->placeCoordinate)
             ]);
             return response()->json([
                 'success' => true,
@@ -559,6 +560,26 @@ class WorkSpaceController extends Controller
                "message" => "Record update",
                "status" => true
             ]);
+         }
+         if($request->action == "getSuppMngr"){
+            $subQuery = DB::table("CRM_CLIENT_ID_GUID as ccig")
+            ->select("cu.ID", "cu.NAIMENOVANIE", "cu.DIREKTSYA", "cu.DOLZHNOST", "SEZON")
+            ->leftJoin("CRM_DOGOVOR as cd", "cd.KONTRAGENT_GUID", "ccig.GUID")
+            ->leftJoin("CRM_USERS as cu", "cu.GUID", "cd.MENEDZHER_GUID")
+            ->where("ccig.ID", $request->clientId)
+            ->groupBy("cu.ID", "cu.NAIMENOVANIE", "cu.DIREKTSYA", "cu.DOLZHNOST", "SEZON")
+            ->orderByDesc("SEZON")
+            ->get();
+
+          return getSuppMngr::collection($subQuery)->all();
+         }
+         if($request->action == "getLastContract"){
+            $query = DB::table("CRM_CLIENT_ID_GUID as cig")
+            ->select("cd.ID","cd.NAIMENOVANIE", "cd.DATA_NACHALA_DEYSTVIYA","cd.DATA_OKONCHANIYA_DEYSTVIYA", "cd.NOMER", "cd.STATUS", "cd.KONTRAGENT", "cd.MENEDZHER AS manager", "cd.SEZON", "cd.ADRES_DOSTAVKI", "cd.SUMMA_KZ_TG")
+            ->join("CRM_DOGOVOR as cd", "cd.KONTRAGENT_GUID", "cig.GUID")
+            ->where("cig.ID", $request->clientId)
+            ->get();
+            return getLastContract::collection($query)->all(); 
          }
       }
    }
