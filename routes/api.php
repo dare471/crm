@@ -48,13 +48,12 @@ Route::group([
     Route::get('/region/{kat_f}','StaffController@District');
     Route::get('/elevatorMarker/', 'StaffController@ElevatorMarker');
     Route::get('/usersmigration', 'StaffController@Migrationalluser');
-
     //end route for maps 
 
 
     //Route v2 for Maps 
     Route::post("/country", "MapsController@MainController");
-    Route::post("/clientFields/v2/", "MapsController@MapsClient");
+    Route::post("/filterPlots", "MapsController@MapsClient");
     Route::post("/mainquery", "MapsController@FilterForMaps");
     Route::post("/history/maps", "HistoryBrowsingController@HistoryBrowsing");
     Route::post("/analytics", "MapsAnalyticsController@AnalyticsMaps");
