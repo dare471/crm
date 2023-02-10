@@ -11,6 +11,7 @@ use App\Http\Resources\managerContract;
 use App\Http\Resources\addicionalContract;
 use App\Http\Resources\clientsRFavoriteList;
 use App\Http\Resources\contractHead;
+use App\Http\Resources\getBusinessPoint;
 use App\Http\Resources\plannedMeeting;
 use App\Http\Resources\specificationContracts;
 use App\Http\Resources\getMainInfCli;
@@ -38,25 +39,23 @@ class WorkSpaceController extends Controller
     }
    public function Worktable(Request $request){
       if($request->type == "allRecords"){
-         $query = DB::table('CRM_SEMENA')
-         ->select(DB::raw('CONVERT(NVARCHAR(max), nomenklatura_guid, 1) as GUID'), 
-         DB::raw('CONVERT(NVARCHAR(max), direksiya, 1) as DIRECTION_GUID'),
-         'Остаток as REMAINDER',
-         'Компании as COMPANIES',
-         'Культура as CULTURE',
-         'Регион AS REGION',
-         'Название продукта AS PRODUCT_NAME',
-         'Технология AS TECHNOLOGIES',
-         'Подтверждение AS CHECKED',
-         'Продано AS SALES',
-         'Отгружено AS SHIPPED',
-         'Не отгружено AS NOT_SHIPPED',
-         'Стоки 2021 AS STOCKED_2021',
-         'Стоки 2022 AS STOCKED_2022',
-         'Стоки 2023 AS STOCKED_2023',
-         'Поступление_2021 AS ADMISSION_2021',
-         'Поступление_2022 AS ADMISSION_2022',
-         'Поступление_2023 as ADMISSION_2023')
+         $query = DB::table('CRM_SEMENA_2023')
+         ->select(DB::raw('CONVERT(NVARCHAR(max), NOMENKLATURA_GUID, 1) as GUID'), 
+         "NOMENKLATURA",
+         "PROIZVODITELI",
+         "VIDY_KULTUR_NOMENKLATURY",
+         DB::raw('CONVERT(NVARCHAR(max), MENEDZHER_GUID, 1) as M_GUID'),
+         "MENEDZHER",
+         "DIREKSYA",
+         DB::raw('CONVERT(NVARCHAR(max), DIREKSYA_GUID, 1) as DIREKSYA_GUID'),
+         "PLAN_2023",
+         "PRODANO",
+         "OTGRUZHENO",
+         "PODTVERZHDENO_Edil",
+         "PODTVERZHDENO_Bakhyt",
+         "OSTATOK_Edil",
+         "OSTATOK_Bakhyt"
+         )
          ->get();
          return response()->json([
             "succes" => true,
@@ -65,11 +64,19 @@ class WorkSpaceController extends Controller
          ]);
       }
       if($request->type == "updateRecord"){
-         $query = DB::statement("EXEC [CRM_DWH].[dbo].UPDATE_SEMENA_PODTVERZHDENIE
-         @nomenklatura_guid= $request->guid  
-         ,@direksiya= $request->directionGuid
-         ,@PODTVERZHDENIE= $request->confirmation");
-         return response()->json(['status' => true, 'message' => 'success', 'data'=> $query], 200);
+         if($request->userId == ""){
+            $query = DB::statement("EXEC [CRM_DWH].[dbo].UPDATE_SEMENA_PODTVERZHDENIE_Bakhyt
+            @NOMENKLATURA= $request->guid  
+            ,@@DIREKSYA= $request->directionGuid
+            ,@PODTVERZHDENIE= $request->confirmation");
+            return response()->json(['status' => true, 'message' => 'success', 'data'=> $query], 200);
+         }else{
+            $query = DB::statement("EXEC [CRM_DWH].[dbo].UPDATE_SEMENA_PODTVERZHDENIE_Edil
+            @NOMENKLATURA= $request->guid  
+            ,@MENEDZHER= $request->managerGuid
+            ,@PODTVERZHDENIE= $request->confirmation");
+            return response()->json(['status' => true, 'message' => 'success', 'data'=> $query], 200);
+         }
       }
       if($request->type == "elevator"){
          if($request->action == "allRecords"){
@@ -300,7 +307,7 @@ class WorkSpaceController extends Controller
             "managerChrono" => managerRelation::collection($managerInf)->all()
          ]);
       }
-      if($request->type == "allContractsClient"){
+      if($request->type == "allContractClient"){
          $query = DB::table("CRM_CLIENT_ID_GUID as ccig")
          ->leftJoin("CRM_DOGOVOR as cd", "cd.KONTRAGENT_GUID", "ccig.GUID")
          ->leftJOin("CRM_USERS as cu", "cu.GUID", "cd.MENEDZHER_GUID")
@@ -488,6 +495,8 @@ class WorkSpaceController extends Controller
       if($request->type == "profileClient"){
          if($request->action == "getMainInf"){
             $query = DB::table("CRM_CLIENT_INFO as cci")
+            ->leftJoin("CRM_CLIENT_ID_GUID as ccig", "ccig.ID", "cci.CLIENT_ID")
+            ->select("cci.ID", "cci.ADDRESS", "NAME", DB::raw("CASE WHEN ccig.GUID IS NULL THEN 0 WHEN ccig.GUID IS NOT NULL THEN 1 END as guid"), "IIN_BIN", "CATO", "DEYATELNOST", "REGION","DISTRICT")
             ->where("cci.ID", $request->clientId)
             ->get();
             return getMainInfCli::collection($query)->all();
@@ -501,9 +510,9 @@ class WorkSpaceController extends Controller
          }
          if($request->action == "getContracts"){
             $query = DB::table("CRM_DOGOVOR as cd")
-            ->leftJoin("CRM_CLIENT_ID_GUID as ccig", "ccig.GUID", "cd.GUID")
+            ->leftJoin("CRM_CLIENT_ID_GUID as ccig", "ccig.GUID", "cd.KONTRAGENT_GUID")
             ->where("ccig.ID", $request->clientId)
-            ->paginate();
+            ->get();
             if($query->isEmpty()){
                return response()->json([
                  "message" =>  "didn't contracts",
@@ -511,8 +520,21 @@ class WorkSpaceController extends Controller
                ]);
             }
             else{
-               return getContracts::collection($query);
+               if(count($query)>15){
+                  return getContracts::collection($query);
+               }
+               else{
+                  return getContracts::collection($query);
+               }
             }
+         }
+         if($request->action == "getLastContract"){
+            $query = DB::table("CRM_CLIENT_ID_GUID as cig")
+            ->select("cd.ID","cd.NAIMENOVANIE", "cd.DATA_NACHALA_DEYSTVIYA","cd.DATA_OKONCHANIYA_DEYSTVIYA", "cd.NOMER", "cd.STATUS", "cd.KONTRAGENT", "cd.MENEDZHER AS manager", "cd.SEZON", "cd.ADRES_DOSTAVKI", "cd.SUMMA_KZ_TG")
+            ->join("CRM_DOGOVOR as cd", "cd.KONTRAGENT_GUID", "cig.GUID")
+            ->where("cig.ID", $request->clientId)
+            ->get();
+            return getLastContract::collection($query)->all(); 
          }
          if($request->action == "getSubcides"){
             $query = DB::table("CRM_SHYMBULAK_SUBSIDIES as css")
@@ -570,16 +592,15 @@ class WorkSpaceController extends Controller
             ->groupBy("cu.ID", "cu.NAIMENOVANIE", "cu.DIREKTSYA", "cu.DOLZHNOST", "SEZON")
             ->orderByDesc("SEZON")
             ->get();
-
           return getSuppMngr::collection($subQuery)->all();
          }
-         if($request->action == "getLastContract"){
-            $query = DB::table("CRM_CLIENT_ID_GUID as cig")
-            ->select("cd.ID","cd.NAIMENOVANIE", "cd.DATA_NACHALA_DEYSTVIYA","cd.DATA_OKONCHANIYA_DEYSTVIYA", "cd.NOMER", "cd.STATUS", "cd.KONTRAGENT", "cd.MENEDZHER AS manager", "cd.SEZON", "cd.ADRES_DOSTAVKI", "cd.SUMMA_KZ_TG")
-            ->join("CRM_DOGOVOR as cd", "cd.KONTRAGENT_GUID", "cig.GUID")
-            ->where("cig.ID", $request->clientId)
+         if($request->action == "getBusinessPoint"){
+            $query = DB::table("CRM_CLIENT_BUSINESS_PLACE as ccbp")
+            ->select("ccbp.ID", "ccbp.CLIENT_ID", "ccbp.NAME", "ccbp.COORDINATE", "csbp.NAME as NAME_C")
+            ->leftJoin("CRM_SPR_BUSINESS_PLACE as csbp", "csbp.ID", "ccbp.PLACE_ID")
+            ->where("CLIENT_ID", $request->clientId)
             ->get();
-            return getLastContract::collection($query)->all(); 
+            return getBusinessPoint::collection($query)->all();
          }
       }
    }

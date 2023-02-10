@@ -25,6 +25,7 @@ class getMainInfCli extends JsonResource
             "id" => (int)$this->ID,
             "address" => $this->ADDRESS,
             "name" => $this->NAME,
+            "guid" => (boolean)$this->guid,
             "iinBin" => (int)$this->IIN_BIN,
             "cato" => (int)$this->CATO,
             "activity" => $this->DEYATELNOST,

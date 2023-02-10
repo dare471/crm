@@ -15,7 +15,7 @@ class getLastContract extends JsonResource
     public function toArray($request)
     {
         return [
-            "id" => $this->ID,
+            "id" => (int)$this->ID,
             "name" => $this->NAIMENOVANIE,
             "number" => $this->NOMER,
             "dateStart" => $this->DATA_NACHALA_DEYSTVIYA,
@@ -25,7 +25,7 @@ class getLastContract extends JsonResource
             "manager" => $this->manager,
             "season" => $this->SEZON,
             "deliveryAddress" => $this->ADRES_DOSTAVKI,
-            "sum" => $this->SUMMA_KZ_TG
+            "sum" => (int)$this->SUMMA_KZ_TG
         ];
     }
 }

@@ -51,13 +51,6 @@ class ResponseClusterController extends Controller
             case "landInf":
                 return ClientFieldsGetCultureResource::collection($request)->all();
             break;
-            // case "seedPivot": 
-            //     return response()->json([
-            //         "status" => 201,
-            //         "succes" => true,
-            //         "data" => $request->current_page
-            //         ])->all();
-            // break;
             case "managerContracts":
                 return  AllContracts::collection($request)->all();
             break;

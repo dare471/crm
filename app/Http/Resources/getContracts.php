@@ -15,19 +15,19 @@ class getContracts extends JsonResource
     public function toArray($request)
     {
         return [
-            "id" => $this->ID,
+            "id" => (int)$this->ID,
             "name" => $this->NAIMENOVANIE,
             "dateCreate" => $this->DATA,
             "dateStart" => $this->DATA_NACHALA_DEYSTVIYA,
             "dateEnd" => $this->DATA_OKONCHANIYA_DEYSTVIYA,
             "number" => $this->NOMER,
-            "succes" => $this->SOGLASOVAN,
+            "succes" => (boolean)$this->SOGLASOVAN,
             "status" => $this->STATUS,
             "managerContract" => $this->MENEDZHER,
             "season" => $this->SEZON,
             "conditionPay" => $this->USLOVIYA_OPLATY,
             "deliveryMethod" => $this->SPOSOB_DOSTAVKI,
-            "sum" => $this->SUMMA_KZ_TG,
+            "sum" => (int)$this->SUMMA_KZ_TG,
             "additionalContract" => $this->NOMER_DOP_SOGLASHENIYA,
             "mainContract" => $this->OSNOVNOY_DOGOVOR_ID
         ];

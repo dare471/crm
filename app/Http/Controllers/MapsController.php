@@ -10,6 +10,7 @@ use App\Http\Resources\FilterMaps;
 use App\Http\Resources\FilterSprCultMaps;
 use App\Http\Resources\getAnalytic;
 use App\Http\Controllers\ResponseClusterController;
+use App\Http\Resources\filterPlotsGetInfClient;
 use App\Models\plots;
 
 class MapsController extends Controller
@@ -244,30 +245,38 @@ class MapsController extends Controller
                 "header" => $headers
             ]);
         }
-       
+        if($request->type == "filterPlots"){
+            if($request->action == "getInfClient"){
+                $query = DB::table("CRM_CLIENT_INFO as cci")
+                ->select("cci.ID", DB::raw("CASE WHEN ccig.GUID is null then 0 when ccig.GUID is not null then 1 end as guid"), "cci.NAME", "cci.IIN_BIN", "cci.DEYATELNOST")
+                ->leftJoin("CRM_CLIENT_ID_GUID as ccig", "ccig.ID", "cci.CLIENT_ID")
+                ->whereIn("cci.ID", $request->arrClient)
+                ->get();
+                return filterPlotsGetInfClient::collection($query)->all();
+            }
         }
+    }
 //*Конец функции 
 
 //* ФИЛЬТР участков под критерий  
-        public function FilterForMaps(Request $request){
-                if($request->type == "sprCult"){
-                    $region = substr($request->districtId, 0, 2);
-                    $district = substr($request->districtId, 2, 4);
-                    $query = DB::table("CRM_SPR_CULTURE as CSC")
-                    ->leftjoin("CRM_CLIENT_PROPERTIES as CCR", "CCR.CULTURE", "CSC.ID")
-                    ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCR.CLIENT_INFO_ID")
-                    ->select(
-                        "CSC.ID as id",
-                        "CSC.NAME as nameCult",
-                        DB::raw("count(CCR.ID) as countPlot")
-                    );
-                    if($district){
-                        $query->where("CCI.DISTRICT", $district);
-                    }
-                    if($region){
-                        $query->where("CCI.REGION", $region);
-                    }
-                    
+    public function FilterForMaps(Request $request){
+        if($request->type == "sprCult"){
+            $region = substr($request->districtId, 0, 2);
+            $district = substr($request->districtId, 2, 4);
+            $query = DB::table("CRM_SPR_CULTURE as CSC")
+                ->leftjoin("CRM_CLIENT_PROPERTIES as CCR", "CCR.CULTURE", "CSC.ID")
+                ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCR.CLIENT_INFO_ID")
+                ->select(
+                    "CSC.ID as id",
+                    "CSC.NAME as nameCult",
+                    DB::raw("count(CCR.ID) as countPlot")
+                );
+                if($district){
+                    $query->where("CCI.DISTRICT", $district);
+                }
+                if($region){
+                    $query->where("CCI.REGION", $region);
+                }    
                     $response = FilterSprCultMaps::collection($query->groupBy("CSC.ID", "CSC.NAME")->get())->all();
                 }
                 if($request->type == "searchIin"){
