@@ -333,11 +333,13 @@ class WorkSpaceController extends Controller
          return response($query);
       }
       if($request->type == "addToFavorites"){
-         $query = DB::table("CRM_CLIENT_TO_VISIT")
-         ->insert([
-            "USER_ID" => $request->userId, 
-            "CLIENT_ID" => $request->clientId
-         ]);
+         foreach($request->clientId as $client_Id){
+            $query = DB::table("CRM_CLIENT_TO_VISIT")
+            ->insert([
+               "USER_ID" => $request->userId, 
+               "CLIENT_ID" => $client_Id
+            ]);
+         }
          return response()->json([
             "message" => "Client to favorites"
          ]);
@@ -602,6 +604,7 @@ class WorkSpaceController extends Controller
             ->get();
             return getBusinessPoint::collection($query)->all();
          }
+         
       }
    }
    // public function __construct()
