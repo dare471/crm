@@ -189,7 +189,19 @@ return [
             'username' => "",
             'password' => ""
         ],
-
+        'X_L' => [
+            'driver' => 'sqlsrv',
+            'host' => '10.200.100.26',
+            'port' => '1433',
+            'database' => 'X_L',
+            'username' => 'X_L',
+            'password' => '2983523456Dare',
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict'    => false,
+        ],
         'AA_DWH' => [
             'driver' => 'sqlsrv',
             'host' => '10.200.100.24',

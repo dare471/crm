@@ -292,7 +292,7 @@ class MapsController extends Controller
                         $query->where("CCI.NAME", "LIKE", "%$request->clientName%");
                     }
                     if($request->districtId){
-                        $query->where("CCI.REGION", $request->districtId);
+                        $query->where("CCI.REGION", $region);
                     }
                     if($request->culture){
                         $query->whereIn("CCP.CULTURE", $request->culture);
@@ -376,4 +376,123 @@ class MapsController extends Controller
             return $response;
         }
 //* Конец функции
+
+public function MapsControll(Request $request){
+    if($request->type == "mapsMainContoller"){
+        if($request->action == "getSprCult"){
+            $region = substr($request->districtId, 0, 2);
+            $district = substr($request->districtId, 2, 4);
+            $query = DB::table("CRM_SPR_CULTURE as CSC")
+                ->leftjoin("CRM_CLIENT_PROPERTIES as CCR", "CCR.CULTURE", "CSC.ID")
+                ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCR.CLIENT_INFO_ID")
+                ->select(
+                    "CSC.ID as id",
+                    "CSC.NAME as nameCult",
+                    DB::raw("count(CCR.ID) as countPlot")
+                );
+                if($district){
+                    $query->where("CCI.DISTRICT", $district);
+                }
+                if($region){
+                    $query->where("CCI.REGION", $region);
+                }    
+                    $response = FilterSprCultMaps::collection($query->groupBy("CSC.ID", "CSC.NAME")->get())->all();
+        }
+        if($request->action == "getAnalytic"){
+            $query = DB::table("CRM_SHYMBLAK_REGION_STATISTICS")
+            ->select("YEAR", "REGION", "KATO", "AA_CLIENTS_% as AA_CLIENTS_PROC", "OTHER_CLIENTS_% as OTHER_CLIENTS_PROC", "CLIENTS_KZ", "CLIENTS_AA", "CLIENTS_OTHER", "AA_AREA_% as AA_AREA_PROC", "OTHER_AREA_% as OTHER_AREA_PROC", "AREA_CLIENTS_KZ", "AREA_CLIENTS_AA", "AREA_CLIENTS_OTHER");
+            if($request->regionId){
+                $query->whereIn("KATO", $request->regionId);
+            }
+            return getAnalytic::collection($query->orderByDesc("YEAR","REGION")->get())->all();
+        }
+        if($request->action == "getSearchIin"){
+            $region = substr($request->districtId, 0, 2);
+            $query = DB::table("CRM_CLIENT_INFO as CCI")
+            ->join("CRM_CLIENT_PROPERTIES_4326 AS CCP", "CCP.CLIENT_INFO_ID", "CCI.ID")
+            ->join("CRM_SPR_CULTURE as CSC", "CSC.ID", "CCP.CULTURE")
+            ->select("CCI.ID as clientId", "CCI.NAME as clientName", "CCI.IIN_BIN as clientIin");
+            if($request->clientIin){
+                $query->where("CCI.IIN_BIN", "LIKE", "%$request->clientIin%");
+            }
+            if($request->clientName){
+                $query->where("CCI.NAME", "LIKE", "%$request->clientName%");
+            }
+            if($request->districtId){
+                $query->where("CCI.REGION", $request->districtId);
+            }
+            if($request->culture){
+                $query->whereIn("CCP.CULTURE", $request->culture);
+            }
+            $rep = $query->groupBy("CCI.ID", "CCI.NAME", "CCI.IIN_BIN")->get();
+            return response($rep);
+        }
+        if($request->action == "filterMaps"){
+            $query = DB::table("CRM_CLIENT_PROPERTIES_4326 as CCR")
+            ->leftjoin("CRM_CLIENT_INFO as CCI", "CCI.ID", "CCR.CLIENT_INFO_ID")
+            ->leftjoin("CRM_CLIENT_ID_GUID as CCIG", "CCIG.ID", "CCI.CLIENT_ID")
+            ->leftjoin("CRM_SPR_CULTURE as CSC", "CSC.ID", "CCR.CULTURE")
+            ->select(
+                DB::raw("'clientLands' as type"), 
+                "CCR.ID as fieldsID", 
+                "CLIENT_INFO_ID as clientID", 
+                "CCI.NAME as clientName",
+                "CCI.IIN_BIN as iin_bin",
+                DB::raw("CASE WHEN CCIG.GUID IS NULL THEN NULL WHEN CCIG.GUID IS NOT NULL THEN '1' END as guid"), 
+                        "CCR.CULTURE as cultureID", 
+                        "CSC.NAME as cultureName",
+                        "CSC.COLOR as color",
+                        "CCI.DISTRICT as district",
+                        "CCI.REGION as region",
+                        "CCR.COORDINATES as geometry_rings"
+                );
+            if($request->cato){
+                $region = substr($request->cato, 0, 2);
+                $district = substr($request->cato, 2, 4);
+                $query->where("CCI.REGION", $region);
+                if($district){
+                    $query->where("CCI.DISTRICT", $district);
+                }
+            }
+            if($request->cult){
+                $query->whereIn("CCR.CULTURE", $request->cult);
+            }
+            if($request->clientId){
+                $query->where("CLIENT_INFO_ID", $request->clientId);
+            }        
+            $response = FilterMaps::collection($query->get());
+        }
+        if(empty($query)){
+            return response()->json([
+                "succees" => true,
+                "status" => 201,
+                "message" => "error type!"
+            ]);
+        }
+        return $response;
+        }
+        if($request->type == "mainMapsQuery"){
+            if($request->regionId){
+                if($request->cultId){
+                    $query = DB::connection("mongodb")->table("PlotsLisatActualAA");
+                    if($request->regionId){
+                        $query->where("regionId", $request->regionId);
+                    }
+                    $query->whereIn("cult", $request->cultId);
+                    return $query->get();
+                }
+                else{
+                    $query = DB::connection("mongodb")->table("AllPlotsClient")
+                        ->where("regionId",  $request->regionId)
+                        ->whereNotIn("clientId", $request->unFollowClients);   
+                        return $response = $query->get();
+                }
+            } 
+            if($request->clientId){
+                $query = DB::connection("mongodb")->table("clientInfoActual")
+                    ->where("clientId", $request->clientId);
+                    return $response = $query->get();
+            }
+        }        
+    }
 }

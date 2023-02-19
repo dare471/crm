@@ -16,6 +16,7 @@
         "laravel/tinker": "^2.5",
         "laravel/ui": "^3.3",
         "nesbot/carbon": "^2.56",
+        "pusher/pusher-php-server": "^7.2",
         "symfony/dom-crawler": "^5.4",
         "tymon/jwt-auth": "^1.0"
     },

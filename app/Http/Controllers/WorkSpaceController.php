@@ -29,542 +29,558 @@ class WorkSpaceController extends Controller
 {
    use Timestamp;
    public function Contracts(Request $request)
-    {
-        if($request->type == "managerContracts"){
-            return  ContractController::AllContracts($request);
-        }
-        if($request->type == "detailContract"){
-            return ContractController::DetailContracts($request);
-        }
-    }
-   public function Worktable(Request $request){
-      if($request->type == "allRecords"){
+   {
+      if ($request->type == "managerContracts") {
+         return  ContractController::AllContracts($request);
+      }
+      if ($request->type == "detailContract") {
+         return ContractController::DetailContracts($request);
+      }
+   }
+   public function Worktable(Request $request)
+   {
+      if ($request->type == "allRecordsBakhyt") {
          $query = DB::table('CRM_SEMENA_2023')
-         ->select(DB::raw('CONVERT(NVARCHAR(max), NOMENKLATURA_GUID, 1) as GUID'), 
-         "NOMENKLATURA",
-         "PROIZVODITELI",
-         "VIDY_KULTUR_NOMENKLATURY",
-         DB::raw('CONVERT(NVARCHAR(max), MENEDZHER_GUID, 1) as M_GUID'),
-         "MENEDZHER",
-         "DIREKSYA",
-         DB::raw('CONVERT(NVARCHAR(max), DIREKSYA_GUID, 1) as DIREKSYA_GUID'),
-         "PLAN_2023",
-         "PRODANO",
-         "OTGRUZHENO",
-         "PODTVERZHDENO_Edil",
-         "PODTVERZHDENO_Bakhyt",
-         "OSTATOK_Edil",
-         "OSTATOK_Bakhyt"
-         )
-         ->get();
+            ->select(
+               DB::raw('DISTINCT CONVERT(NVARCHAR(max), NOMENKLATURA_GUID, 1) as GUID'),
+               "NOMENKLATURA",
+               "PROIZVODITELI",
+               "VIDY_KULTUR_NOMENKLATURY",
+               "DIREKSYA",
+               DB::raw('CONVERT(NVARCHAR(max), DIREKSYA_GUID, 1) as DIREKSYA_GUID'),
+               DB::raw("SUM(PLAN_2023) OVER(PARTITION BY [NOMENKLATURA_GUID],[DIREKSYA_GUID]) as plan2023 "),
+               DB::raw("SUM(PRODANO) OVER(PARTITION BY [NOMENKLATURA_GUID],[DIREKSYA_GUID]) as sales"),
+               DB::raw("SUM([OTGRUZHENO]) OVER(PARTITION BY [NOMENKLATURA_GUID],[DIREKSYA_GUID]) AS otrgr"),
+               DB::raw("SUM([PRODANO_SUM]) OVER(PARTITION BY [NOMENKLATURA_GUID],[DIREKSYA_GUID]) AS salesSum"),
+               DB::raw("SUM([PLAN_SUM]) OVER(PARTITION BY [NOMENKLATURA_GUID],[DIREKSYA_GUID]) AS planSum"),
+               DB::raw("MAX([OSTATOK_Bakhyt])OVER(PARTITION BY [NOMENKLATURA_GUID],[DIREKSYA_GUID]) as ostBakhyt "),
+               DB::raw("MAX(PODTVERZHDENO_Bakhyt) OVER(PARTITION BY [NOMENKLATURA_GUID],[DIREKSYA_GUID]) AS potBakhyt")
+            )
+            ->whereNotNull("DIREKSYA_GUID")
+            ->orderByDesc("ostBakhyt")
+            ->get();
          return response()->json([
             "succes" => true,
             "status" => 201,
             "data" => $query
          ]);
       }
-      if($request->type == "updateRecord"){
-         if($request->userId == ""){
-            $query = DB::statement("EXEC [CRM_DWH].[dbo].UPDATE_SEMENA_PODTVERZHDENIE_Bakhyt
+
+      if ($request->type == "updateRecord") {
+         $query = DB::statement("EXEC [CRM_DWH].[dbo].UPDATE_SEMENA_PODTVERZHDENIE_Bakhyt
             @NOMENKLATURA= $request->guid  
-            ,@@DIREKSYA= $request->directionGuid
+            ,@DIREKSYA= $request->directionGuid
             ,@PODTVERZHDENIE= $request->confirmation");
-            return response()->json(['status' => true, 'message' => 'success', 'data'=> $query], 200);
-         }else{
-            $query = DB::statement("EXEC [CRM_DWH].[dbo].UPDATE_SEMENA_PODTVERZHDENIE_Edil
-            @NOMENKLATURA= $request->guid  
-            ,@MENEDZHER= $request->managerGuid
-            ,@PODTVERZHDENIE= $request->confirmation");
-            return response()->json(['status' => true, 'message' => 'success', 'data'=> $query], 200);
-         }
+         return response()->json(['status' => true, 'message' => 'success', 'data' => $query], 200);
       }
-      if($request->type == "elevator"){
-         if($request->action == "allRecords"){
+      if ($request->type == "elevator") {
+         if ($request->action == "allRecords") {
             $query = DB::table("CRM_ELEVATOR")
-            ->select("ID", "NAME", "BIN", "LOCATION", "STATION", "CONTACTS", "STORAGE_VOLUME")
-            ->get();
+               ->select("ID", "NAME", "BIN", "LOCATION", "STATION", "CONTACTS", "STORAGE_VOLUME")
+               ->get();
             return response()->json([
                "succes" => true,
                "status" => 201,
                "data" => $query
             ]);
          }
-         if($request->action == "detail"){
+         if ($request->action == "detail") {
             $query = DB::table("CRM_ELEVATOR")
-            ->select("ID", "NAME", "BIN", "LOCATION", "STATION", "CONTACTS", "STORAGE_VOLUME")
-            ->where("ID", $request->recordId)
-            ->get();
+               ->select("ID", "NAME", "BIN", "LOCATION", "STATION", "CONTACTS", "STORAGE_VOLUME")
+               ->where("ID", $request->recordId)
+               ->get();
             return response()->json([
                "succees" => true,
                "status" => 201,
                "data" => $query
             ]);
-          }
-         if($request->action == "deleteRecord"){
+         }
+         if ($request->action == "deleteRecord") {
             $query = DB::table("CRM_ELEVATOR")
-            ->where("ID", $request->recordId)
-            ->delete();
+               ->where("ID", $request->recordId)
+               ->delete();
             return response()->json([
                "succees" => true,
                "status" => 201,
                "message" => "Records delete !!!"
             ]);
          }
-         if($request->action == "updateRecord"){
-            $query = DB::table()
-            ->where("ID", $request->recordId)
-            ->update([
-               "CONTACTS" => $request->contactsRecord,
-               "STORAGE_VOLUME" => $request->volumeRecord
-            ]);
-            return response()->json([
-               "succes" => true,
-               "status" => 201,
-               "message" => "Records update"
-            ]);
-         }
-         if($request->action == "addRecord"){
+         // if($request->action == "updateRecord"){
+         //    $query = DB::table()
+         //    ->where("ID", $request->recordId)
+         //    ->update([
+         //       "CONTACTS" => $request->contactsRecord,
+         //       "STORAGE_VOLUME" => $request->volumeRecord
+         //    ]);
+         //    return response()->json([
+         //       "succes" => true,
+         //       "status" => 201,
+         //       "message" => "Records update"
+         //    ]);
+         // }
+         if ($request->action == "addRecord") {
             $query = DB::table("CRM_ELEVATOR")
-            ->insert(['NAME' => $request->nameRecord, 
-            'BIN' => $request->binRecord, 
-            'LOCATION' => $request->locationRecord, 
-            'STATION' => $request->stationRecord, 
-            'CONTACTS' => $request->contactsRecord, 
-            'STORAGE_VOLUME' => $request->volumeRecord
-         ]);
-         return response()->json([
-            "succees" => true,
-            "status" => 201,
-            "message" => "Record add"
-         ]);
+               ->insert([
+                  'NAME' => $request->nameRecord,
+                  'BIN' => $request->binRecord,
+                  'LOCATION' => $request->locationRecord,
+                  'STATION' => $request->stationRecord,
+                  'CONTACTS' => $request->contactsRecord,
+                  'STORAGE_VOLUME' => $request->volumeRecord
+               ]);
+            return response()->json([
+               "succees" => true,
+               "status" => 201,
+               "message" => "Record add"
+            ]);
          }
       }
    }
-   public function UserPlace(Request $request){
-      if($request->type == "clientLRegion"){
+   public function UserPlace(Request $request)
+   {
+      if ($request->type == "clientLRegion") {
          $query = DB::table("CRM_CLIENT_INFO as cci")
-         ->join("CRM_CLIENT_ID_GUID as ccig", "ccig.ID", "cci.CLIENT_ID")
-         ->select("NAME", 
-         "ADDRESS", 
-         "CLIENT_ID as clientId", 
-         "IIN_BIN", 
-         "CATO", DB::raw("CASE WHEN GUID IS NOT NULL then 'Постоянный клиент' ELSE 'Новый клиент' end as clientCheck"),         
-         )
-         ->where("REGION", $request->regionId)
-         ->groupBy("NAME", "ADDRESS","GUID", "CLIENT_ID", "IIN_BIN", "CATO")
-         ->get();
+            ->join("CRM_CLIENT_ID_GUID as ccig", "ccig.ID", "cci.CLIENT_ID")
+            ->select(
+               "NAME",
+               "ADDRESS",
+               "CLIENT_ID as clientId",
+               "IIN_BIN",
+               "CATO",
+               DB::raw("CASE WHEN GUID IS NOT NULL then 'Постоянный клиент' ELSE 'Новый клиент' end as clientCheck"),
+            )
+            ->where("REGION", $request->regionId)
+            ->groupBy("NAME", "ADDRESS", "GUID", "CLIENT_ID", "IIN_BIN", "CATO")
+            ->get();
          return clientLRegion::collection($query)->all();
       }
-      if($request->type == "clientInf"){
+      if ($request->type == "clientInf") {
          $query = DB::table("CRM_CLIENT_INFO as cci")
-         ->leftJoin("CRM_CLIENT_PROPERTIES_4326 as ccp", "ccp.client_info_id", "cci.id")
-         ->leftJoin("CRM_CLIENT_CONTACTS as ccc", "ccc.CLIENT_ID", "cci.CLIENT_ID")
-         ->select("cci.ID", 
-         "ADDRESS", 
-         "cci.CLIENT_ID", 
-         "IIN_BIN", 
-         "CATO", 
-         "cci.DEYATELNOST",
-         "ccc.NAME as contactName",
-         "ccc.POSITION", 
-         "ccc.PHONE_NUMBER",
-         "ccc.EMAIL")
-         ->where("cci.CLIENT_ID", $request->clientId)
-         ->groupBy(
-            "cci.NAME",
-            "ADDRESS",
-            "cci.DEYATELNOST",
-            "cci.CLIENT_ID",
-            "cci.ID",
-            "IIN_BIN",
-            "CATO",
-            "ccc.NAME",
-            "ccc.POSITION",
-            "ccc.PHONE_NUMBER",
-            "ccc.EMAIL"
-         )
-         ->get();
+            ->leftJoin("CRM_CLIENT_PROPERTIES_4326 as ccp", "ccp.client_info_id", "cci.id")
+            ->leftJoin("CRM_CLIENT_CONTACTS as ccc", "ccc.CLIENT_ID", "cci.CLIENT_ID")
+            ->select(
+               "cci.ID",
+               "ADDRESS",
+               "cci.CLIENT_ID",
+               "IIN_BIN",
+               "CATO",
+               "cci.DEYATELNOST",
+               "ccc.NAME as contactName",
+               "ccc.POSITION",
+               "ccc.PHONE_NUMBER",
+               "ccc.EMAIL"
+            )
+            ->where("cci.CLIENT_ID", $request->clientId)
+            ->groupBy(
+               "cci.NAME",
+               "ADDRESS",
+               "cci.DEYATELNOST",
+               "cci.CLIENT_ID",
+               "cci.ID",
+               "IIN_BIN",
+               "CATO",
+               "ccc.NAME",
+               "ccc.POSITION",
+               "ccc.PHONE_NUMBER",
+               "ccc.EMAIL"
+            )
+            ->get();
          return clientInf::collection($query)->all();
       }
-      if($request->type == "managerContracts"){
+      if ($request->type == "managerContracts") {
          $query = DB::table("CRM_CLIENT_ID_GUID as ccig")
-         ->leftJoin("CRM_DOGOVOR as cd", "cd.KONTRAGENT_GUID", "ccig.GUID")
-         ->leftJoin("CRM_USERS as cu", "cu.GUID", "cd.MENEDZHER_GUID")
-         ->leftJoin("CRM_CLIENT_INFO as cci", "cci.CLIENT_ID", "ccig.ID")
-         ->select(DB::raw("CONVERT(NVARCHAR(MAX), CD.GUID, 1) AS CONTRACTS_GUID"),
-         "cu.ID",
-         "cu.NAIMENOVANIE as managerName",
-         "cu.DIREKTSYA",
-         "cu.DOLZHNOST",
-         "ccig.ID as clientId",
-         "cd.KONTRAGENT",
-         "cd.NAIMENOVANIE",
-         "cci.IIN_BIN",
-         "SEZON",
-         "cd.USLOVIYA_OPLATY",
-         "cd.SPOSOB_DOSTAVKI",
-         "cd.ADRES_DOSTAVKI",
-         "cd.SUMMA_KZ_TG")
-         ->where("cu.ID", $request->userId)
-         ->where("cd.OSNOVNOY_DOGOVOR", "")
-         ->whereIn("SEZON", ['Сезон 2022', 'Сезон 2021'])
-         ->get();
+            ->leftJoin("CRM_DOGOVOR as cd", "cd.KONTRAGENT_GUID", "ccig.GUID")
+            ->leftJoin("CRM_USERS as cu", "cu.GUID", "cd.MENEDZHER_GUID")
+            ->leftJoin("CRM_CLIENT_INFO as cci", "cci.CLIENT_ID", "ccig.ID")
+            ->select(
+               DB::raw("CONVERT(NVARCHAR(MAX), CD.GUID, 1) AS CONTRACTS_GUID"),
+               "cu.ID",
+               "cu.NAIMENOVANIE as managerName",
+               "cu.DIREKTSYA",
+               "cu.DOLZHNOST",
+               "ccig.ID as clientId",
+               "cd.KONTRAGENT",
+               "cd.NAIMENOVANIE",
+               "cci.IIN_BIN",
+               "SEZON",
+               "cd.USLOVIYA_OPLATY",
+               "cd.SPOSOB_DOSTAVKI",
+               "cd.ADRES_DOSTAVKI",
+               "cd.SUMMA_KZ_TG"
+            )
+            ->where("cu.ID", $request->userId)
+            ->where("cd.OSNOVNOY_DOGOVOR", "")
+            ->whereIn("SEZON", ['Сезон 2022', 'Сезон 2021'])
+            ->get();
          return managerContract::collection($query)->all();
       }
-      if($request->type == "detailContract"){
+      if ($request->type == "detailContract") {
          $query = DB::table("CRM_DOGOVOR_SPETSIFIKATSIYA as cds")
-         ->leftJoin("CRM_DOGOVOR as cd", "cd.GUID", "cds.DOGOVOR_GUID")
-         ->select(DB::raw("CONVERT(NVARCHAR(MAX), DOGOVOR_GUID, 1) AS CONTRACT_GUID"), 
-         "cd.NAIMENOVANIE",
-         "PERIOD",
-         DB::raw("CONVERT(NVARCHAR(MAX), NOMENKLATURA_GUID, 1) AS PRODUCT_GUID"),
-         "NOMENKLATURA",
-         "VIDY_KULTUR",
-         "KOLICHESTVO",
-         "TSENA",
-         "TSENA_SO_SKIDKOY",
-         "TSENA_PO_PRAYS_LISTU",
-         "TSENA_MIN",
-         "SUMMA",
-         "SUMMA_SO_SKIDKOY",
-         DB::raw("CONVERT(NVARCHAR(MAX), SKLAD_OTGRUZKI_GUID, 1) AS WAREHOUSE_GUID"),
-         "SKLAD_OTGRUZKI",
-         "cds.SUMMA_KZ_TG")
-         ->whereRaw("DOGOVOR_GUID = $request->contractGuid")
-         ->get();
+            ->leftJoin("CRM_DOGOVOR as cd", "cd.GUID", "cds.DOGOVOR_GUID")
+            ->select(
+               DB::raw("CONVERT(NVARCHAR(MAX), DOGOVOR_GUID, 1) AS CONTRACT_GUID"),
+               "cd.NAIMENOVANIE",
+               "PERIOD",
+               DB::raw("CONVERT(NVARCHAR(MAX), NOMENKLATURA_GUID, 1) AS PRODUCT_GUID"),
+               "NOMENKLATURA",
+               "VIDY_KULTUR",
+               "KOLICHESTVO",
+               "TSENA",
+               "TSENA_SO_SKIDKOY",
+               "TSENA_PO_PRAYS_LISTU",
+               "TSENA_MIN",
+               "SUMMA",
+               "SUMMA_SO_SKIDKOY",
+               DB::raw("CONVERT(NVARCHAR(MAX), SKLAD_OTGRUZKI_GUID, 1) AS WAREHOUSE_GUID"),
+               "SKLAD_OTGRUZKI",
+               "cds.SUMMA_KZ_TG"
+            )
+            ->whereRaw("DOGOVOR_GUID = $request->contractGuid")
+            ->get();
 
          $contractHead = DB::table("CRM_CLIENT_ID_GUID as ccig")
-         ->leftJoin("CRM_DOGOVOR as cd", "cd.KONTRAGENT_GUID", "ccig.GUID")
-         ->leftJoin("CRM_USERS as cu", "cu.GUID", "cd.MENEDZHER_GUID")
-         ->select(DB::raw("CONVERT(NVARCHAR(MAX), CD.GUID, 1) AS CONTRACTS_GUID"),
-         "cu.ID", 
-         "cu.NAIMENOVANIE", 
-         "cu.DIREKTSYA", 
-         "cu.DOLZHNOST", 
-         "ccig.ID", 
-         "cd.KONTRAGENT",
-         "cd.NAIMENOVANIE as contractName",
-         "SEZON",
-         "cd.USLOVIYA_OPLATY",
-         "cd.SPOSOB_DOSTAVKI",
-         "cd.ADRES_DOSTAVKI",
-         "cd.SUMMA_KZ_TG",
-         "cd.NOMER_DOP_SOGLASHENIYA",
-         DB::raw("CONVERT(NVARCHAR(MAX), CD.OSNOVNOY_DOGOVOR, 1) AS MAIN_CONTRACTS"))
-         ->whereRaw("cd.GUID = $request->contractGuid")
-         ->get();
+            ->leftJoin("CRM_DOGOVOR as cd", "cd.KONTRAGENT_GUID", "ccig.GUID")
+            ->leftJoin("CRM_USERS as cu", "cu.GUID", "cd.MENEDZHER_GUID")
+            ->select(
+               DB::raw("CONVERT(NVARCHAR(MAX), CD.GUID, 1) AS CONTRACTS_GUID"),
+               "cu.ID",
+               "cu.NAIMENOVANIE",
+               "cu.DIREKTSYA",
+               "cu.DOLZHNOST",
+               "ccig.ID",
+               "cd.KONTRAGENT",
+               "cd.NAIMENOVANIE as contractName",
+               "SEZON",
+               "cd.USLOVIYA_OPLATY",
+               "cd.SPOSOB_DOSTAVKI",
+               "cd.ADRES_DOSTAVKI",
+               "cd.SUMMA_KZ_TG",
+               "cd.NOMER_DOP_SOGLASHENIYA",
+               DB::raw("CONVERT(NVARCHAR(MAX), CD.OSNOVNOY_DOGOVOR, 1) AS MAIN_CONTRACTS")
+            )
+            ->whereRaw("cd.GUID = $request->contractGuid")
+            ->get();
 
          $maincontractguid = $contractHead[0]->CONTRACTS_GUID;
 
          $addicionalContract = DB::table("CRM_DOGOVOR as cd")
-         ->select(DB::raw("CONVERT(NVARCHAR(MAX), CD.GUID, 1) AS GUID"), 
-         "cd.NAIMENOVANIE",
-         DB::raw("CONVERT(NVARCHAR(MAX), OSNOVNOY_DOGOVOR, 1) as main"))
-         ->where("cd.OSNOVNOY_DOGOVOR", $maincontractguid)
-         ->get();
+            ->select(
+               DB::raw("CONVERT(NVARCHAR(MAX), CD.GUID, 1) AS GUID"),
+               "cd.NAIMENOVANIE",
+               DB::raw("CONVERT(NVARCHAR(MAX), OSNOVNOY_DOGOVOR, 1) as main")
+            )
+            ->where("cd.OSNOVNOY_DOGOVOR", $maincontractguid)
+            ->get();
          return response()->json([
             "contractHead" => contractHead::collection($contractHead)->all(),
             "specificationContract" => specificationContracts::collection($query)->all(),
             "addicionalContract" => addicionalContract::collection($addicionalContract)->all()
          ]);
       }
-      if($request->type == "managerRelation"){
+      if ($request->type == "managerRelation") {
          $query = DB::table("CRM_CLIENT_ID_GUID as cig")
-         ->join("CRM_DOGOVOR as cd", "cd.KONTRAGENT_GUID", "cig.GUID")
-         ->select("cig.ID",
-         "cd.NAIMENOVANIE",
-         "cd.DATA_NACHALA_DEYSTVIYA",
-         "cd.DATA_OKONCHANIYA_DEYSTVIYA",
-         "cd.NOMER",
-         "cd.STATUS",
-         "cd.KONTRAGENT",
-         "cd.MENEDZHER",
-         "cd.SEZON",
-         "cd.ADRES_DOSTAVKI",
-         "cd.SUMMA_KZ_TG")
-         ->where("cig.ID", $request->clientId)
-         ->orderByDesc("DATA_NACHALA_DEYSTVIYA")
-         ->get();
-         
+            ->join("CRM_DOGOVOR as cd", "cd.KONTRAGENT_GUID", "cig.GUID")
+            ->select(
+               "cig.ID",
+               "cd.NAIMENOVANIE",
+               "cd.DATA_NACHALA_DEYSTVIYA",
+               "cd.DATA_OKONCHANIYA_DEYSTVIYA",
+               "cd.NOMER",
+               "cd.STATUS",
+               "cd.KONTRAGENT",
+               "cd.MENEDZHER",
+               "cd.SEZON",
+               "cd.ADRES_DOSTAVKI",
+               "cd.SUMMA_KZ_TG"
+            )
+            ->where("cig.ID", $request->clientId)
+            ->orderByDesc("DATA_NACHALA_DEYSTVIYA")
+            ->get();
+
          $managerInf = DB::table("CRM_CLIENT_ID_GUID as ccig")
-         ->leftJoin("CRM_DOGOVOR as cd", "cd.KONTRAGENT_GUID", "ccig.GUID")
-         ->leftJoin("CRM_USERS as cu", "cu.GUID", "cd.MENEDZHER_GUID")
-         ->select("cu.ID", 
-         "cu.NAIMENOVANIE",
-         "cu.DIREKTSYA",
-         "cu.DOLZHNOST",
-         "SEZON")
-         ->where("ccig.ID", $request->clientId)
-         ->groupBy("cu.ID", 
-         "cu.NAIMENOVANIE",
-         "cu.DIREKTSYA",
-         "cu.DOLZHNOST",
-         "SEZON")
-         ->orderByDesc("SEZON")
-         ->get();
+            ->leftJoin("CRM_DOGOVOR as cd", "cd.KONTRAGENT_GUID", "ccig.GUID")
+            ->leftJoin("CRM_USERS as cu", "cu.GUID", "cd.MENEDZHER_GUID")
+            ->select(
+               "cu.ID",
+               "cu.NAIMENOVANIE",
+               "cu.DIREKTSYA",
+               "cu.DOLZHNOST",
+               "SEZON"
+            )
+            ->where("ccig.ID", $request->clientId)
+            ->groupBy(
+               "cu.ID",
+               "cu.NAIMENOVANIE",
+               "cu.DIREKTSYA",
+               "cu.DOLZHNOST",
+               "SEZON"
+            )
+            ->orderByDesc("SEZON")
+            ->get();
          return response()->json([
             "contractData" => contractRelation::collection($query)->all(),
             "managerChrono" => managerRelation::collection($managerInf)->all()
          ]);
       }
-      if($request->type == "allContractClient"){
+      if ($request->type == "allContractClient") {
          $query = DB::table("CRM_CLIENT_ID_GUID as ccig")
-         ->leftJoin("CRM_DOGOVOR as cd", "cd.KONTRAGENT_GUID", "ccig.GUID")
-         ->leftJOin("CRM_USERS as cu", "cu.GUID", "cd.MENEDZHER_GUID")
-         ->leftJoin("CRM_CLIENT_INFO as cci", "cci.CLIENT_ID", "ccig.ID")
-         ->select(DB::raw("CONVERT(NVARCHAR(MAX), CD.GUID, 1) AS CONTRACTS_GUID"),
-         "cu.ID",
-         "cu.NAIMENOVANIE",
-         "cu.DIREKTSYA",
-         "cu.DOLZHNOST",
-         "ccig.ID",
-         "cd.KONTRAGENT",
-         "cd.NAIMENOVANIE",
-         "cci.IIN_BIN",
-         "SEZON",
-         "cd.USLOVIYA_OPLATY",
-         "cd.SPOSOB_DOSTAVKI",
-         "cd.ADRES_DOSTAVKI",
-         "cd.SUMMA_KZ_TG")
-         ->where("cci.CLIENT_ID", $request->clientId)
-         ->where("cd.OSNOVNOY_DOGOVOR", "")
-         ->whereIn("SEZON", ['Сезон 2023','Сезон 2022', 'Сезон 2021'])
-         ->get();
+            ->leftJoin("CRM_DOGOVOR as cd", "cd.KONTRAGENT_GUID", "ccig.GUID")
+            ->leftJOin("CRM_USERS as cu", "cu.GUID", "cd.MENEDZHER_GUID")
+            ->leftJoin("CRM_CLIENT_INFO as cci", "cci.CLIENT_ID", "ccig.ID")
+            ->select(
+               DB::raw("CONVERT(NVARCHAR(MAX), CD.GUID, 1) AS CONTRACTS_GUID"),
+               "cu.ID",
+               "cu.NAIMENOVANIE",
+               "cu.DIREKTSYA",
+               "cu.DOLZHNOST",
+               "ccig.ID",
+               "cd.KONTRAGENT",
+               "cd.NAIMENOVANIE",
+               "cci.IIN_BIN",
+               "SEZON",
+               "cd.USLOVIYA_OPLATY",
+               "cd.SPOSOB_DOSTAVKI",
+               "cd.ADRES_DOSTAVKI",
+               "cd.SUMMA_KZ_TG"
+            )
+            ->where("cci.CLIENT_ID", $request->clientId)
+            ->where("cd.OSNOVNOY_DOGOVOR", "")
+            ->whereIn("SEZON", ['Сезон 2023', 'Сезон 2022', 'Сезон 2021'])
+            ->get();
          return response($query);
       }
-      if($request->type == "addToFavorites"){
-         foreach($request->clientId as $client_Id){
+      if ($request->type == "addToFavorites") {
+         foreach ($request->clientId as $client_Id) {
             $query = DB::table("CRM_CLIENT_TO_VISIT")
-            ->insert([
-               "USER_ID" => $request->userId, 
-               "CLIENT_ID" => $client_Id
-            ]);
+               ->insert([
+                  "USER_ID" => $request->userId,
+                  "CLIENT_ID" => $client_Id
+               ]);
          }
          return response()->json([
             "message" => "Client to favorites"
          ]);
       }
-      if($request->type == "deleteToFavorites"){
+      if ($request->type == "deleteToFavorites") {
          $query = DB::table("CRM_CLIENT_TO_VISIT")
-         ->where("CLIENT_ID", $request->clientId)
-         ->where("USER_ID", $request->userId)
-         ->delete();
+            ->where("CLIENT_ID", $request->clientId)
+            ->where("USER_ID", $request->userId)
+            ->delete();
          return response()->json([
             "message" => "Client Delete to favorites"
          ]);
       }
-      if($request->type == "clientsFavoriteList"){
+      if ($request->type == "clientsFavoriteList") {
          $query = DB::table("CRM_CLIENT_TO_VISIT as cctv")
-         ->leftJoin("CRM_CLIENT_INFO as cci", "cci.ID", "cctv.CLIENT_ID")
-         ->select("cctv.ID", "cctv.CLIENT_ID", "cci.NAME", "cci.IIN_BIN", "cci.ADDRESS")
-         ->where("USER_ID", $request->userId)
-         ->get();
+            ->leftJoin("CRM_CLIENT_INFO as cci", "cci.ID", "cctv.CLIENT_ID")
+            ->select("cctv.ID", "cctv.CLIENT_ID", "cci.NAME", "cci.IIN_BIN", "cci.ADDRESS")
+            ->where("USER_ID", $request->userId)
+            ->get();
          return clientsRFavoriteList::collection($query)->all();
       }
-      if($request->type == "addDateToVisit"){
+      if ($request->type == "addDateToVisit") {
          $query = DB::table("CRM_VISIT_TO_DATE")
-         ->insertGetId([
-            "USER_ID" => $request->userId,
-            "CLIENT_ID" => json_encode($request->properties),
-            "DATE_TO_VISIT" => $request->dateToVisit
-         ]);
-         $arr = $request->properties;
-         $i=0;
-         foreach($arr as $a){
-            $p=json_encode($a, true);
-            $query2 = DB::table("CRM_VISIT_TO_DATE_PROPERTIES")
-            ->insert([
-               "VISIT_ID" => $query,
-               "CLIENT_ID" => json_decode($p)->clientId,
-               "TYPE_VISIT_ID" =>json_decode($p)->typeVisit,
-               "TYPE_MEETING" => json_decode($p)->placeMeeting,
-               "MEETING_COORDINATE" =>json_decode($p)->coordinate,
-               "PLOT" => json_decode($p)->plotId,
-               "DURATION" => json_decode($p)->duration,
-               "DISTANCE" => json_decode($p)->distance
+            ->insertGetId([
+               "USER_ID" => $request->userId,
+               "CLIENT_ID" => json_encode($request->properties),
+               "DATE_TO_VISIT" => $request->dateToVisit
             ]);
+         $arr = $request->properties;
+         $i = 0;
+         foreach ($arr as $a) {
+            $p = json_encode($a, true);
+            $query2 = DB::table("CRM_VISIT_TO_DATE_PROPERTIES")
+               ->insert([
+                  "VISIT_ID" => $query,
+                  "CLIENT_ID" => json_decode($p)->clientId,
+                  "TYPE_VISIT_ID" => json_decode($p)->typeVisit,
+                  "TYPE_MEETING" => json_decode($p)->placeMeeting,
+                  "MEETING_COORDINATE" => json_decode($p)->coordinate,
+                  "PLOT" => json_decode($p)->plotId,
+                  "DURATION" => json_decode($p)->duration,
+                  "DISTANCE" => json_decode($p)->distance
+               ]);
          }
          return response()->json([
-           "message" => "Meeting to save"
+            "message" => "Meeting to save"
          ]);
       }
-      if($request->type == "plannedMeeting"){
+      if ($request->type == "plannedMeeting") {
          $query = DB::table("CRM_VISIT_TO_DATE as cdtv")
-         ->select("cdtv.DATE_TO_VISIT", "cdtv.ID", "CLIENT_ID", "css.NAME")
-         ->leftJoin("CRM_SPR_STATUS as css", "css.ID", "cdtv.STATUS")
-         ->where("USER_ID", $request->userId)
-         ->get();
-         $arr=[];
-         $ar=[];
-         $a=[];
-         foreach($query as $q){
+            ->select("cdtv.DATE_TO_VISIT", "cdtv.ID", "CLIENT_ID", "css.NAME")
+            ->leftJoin("CRM_SPR_STATUS as css", "css.ID", "cdtv.STATUS")
+            ->where("USER_ID", $request->userId)
+            ->get();
+         $arr = [];
+         $ar = [];
+         $a = [];
+         foreach ($query as $q) {
             $clientId = json_decode($q->CLIENT_ID);
             $query2 = DB::table("CRM_VISIT_TO_DATE_PROPERTIES as cdtvp")
-            ->where("cdtvp.VISIT_ID", $q->ID)
-            ->get();
-            foreach($query2 as $c){
-               $query=DB::table("CRM_CLIENT_INFO as cci")
-               ->leftJoin("CRM_VISIT_TO_DATE_PROPERTIES as cdtvp", "cdtvp.CLIENT_ID", "cci.ID")
-               ->leftJoin("CRM_SPR_TYPE_VISIT as cstv", "cstv.ID", "cdtvp.TYPE_VISIT_ID")
-               ->leftJoin("CRM_SPR_TYPE_MEETING as cstm", "cdtvp.TYPE_MEETING", "cstm.ID")
-               ->select("cci.ID", "cci.NAME", "IIN_BIN", "ADDRESS", "cdtvp.TYPE_VISIT_ID as visitId", "cdtvp.TIME_MEETING as timeMeeting", "cstv.NAME as visitName", "cstm.ID as meetingId", "cstm.NAME as meetingName", "cdtvp.PLOT as plotId")
                ->where("cdtvp.VISIT_ID", $q->ID)
-               ->where("cci.ID", $c->CLIENT_ID)
                ->get();
-            array_push($ar, $query[0]);
+            foreach ($query2 as $c) {
+               $query = DB::table("CRM_CLIENT_INFO as cci")
+                  ->leftJoin("CRM_VISIT_TO_DATE_PROPERTIES as cdtvp", "cdtvp.CLIENT_ID", "cci.ID")
+                  ->leftJoin("CRM_SPR_TYPE_VISIT as cstv", "cstv.ID", "cdtvp.TYPE_VISIT_ID")
+                  ->leftJoin("CRM_SPR_TYPE_MEETING as cstm", "cdtvp.TYPE_MEETING", "cstm.ID")
+                  ->select("cci.ID", "cci.NAME", "IIN_BIN", "ADDRESS", "cdtvp.TYPE_VISIT_ID as visitId", "cdtvp.TIME_MEETING as timeMeeting", "cstv.NAME as visitName", "cstm.ID as meetingId", "cstm.NAME as meetingName", "cdtvp.PLOT as plotId")
+                  ->where("cdtvp.VISIT_ID", $q->ID)
+                  ->where("cci.ID", $c->CLIENT_ID)
+                  ->get();
+               array_push($ar, $query[0]);
             }
-            array_push($arr, 
-            [
-               "id" => (int)$q->ID, "dateToVisit" => $q->DATE_TO_VISIT, "statusVisit" => $q->NAME, "clients"=>plannedMeeting::collection($ar)->all()
-            ]
-         );
-         $ar= array();
+            array_push(
+               $arr,
+               [
+                  "id" => (int)$q->ID, "dateToVisit" => $q->DATE_TO_VISIT, "statusVisit" => $q->NAME, "clients" => plannedMeeting::collection($ar)->all()
+               ]
+            );
+            $ar = array();
          }
-        return $arr;
+         return $arr;
       }
-      if($request->type == "choiceMeetingPlace"){
-         if($request->id == 40){
+      if ($request->type == "choiceMeetingPlace") {
+         if ($request->id == 40) {
             $query = DB::connection("mongodb")
-            ->table("AllPlotsClient")
-            ->where("clientId", $request->clientId)
-            ->get();
+               ->table("AllPlotsClient")
+               ->where("clientId", $request->clientId)
+               ->get();
             return $query;
          }
-         if($request->id == 44){
+         if ($request->id == 44) {
             $query = DB::table("CRM_CLIENT_INFO")
-            ->select("ADDRESS as clientAddress")
-            ->where("ID", $request->clientId)
-            ->get();
+               ->select("ADDRESS as clientAddress")
+               ->where("ID", $request->clientId)
+               ->get();
 
             $to = urlencode("г.Кокшетау, Северная промзона, У107");
             $from = urlencode($query[0]->clientAddress);
 
-            $to_coord = file_get_contents('https://maps.google.com/maps/api/geocode/json?address='.$to.'&key=AIzaSyA86O2e55O4nvcr342va66R2PXJYxBVjXo');
+            $to_coord = file_get_contents('https://maps.google.com/maps/api/geocode/json?address=' . $to . '&key=AIzaSyA86O2e55O4nvcr342va66R2PXJYxBVjXo');
             $to_coordinate = json_decode($to_coord, true);
-            $t=$to_coordinate['results'][0]['geometry']['location'];
+            $t = $to_coordinate['results'][0]['geometry']['location'];
 
-            $from_coord = file_get_contents('https://maps.google.com/maps/api/geocode/json?address='.$from.'&key=AIzaSyA86O2e55O4nvcr342va66R2PXJYxBVjXo');
+            $from_coord = file_get_contents('https://maps.google.com/maps/api/geocode/json?address=' . $from . '&key=AIzaSyA86O2e55O4nvcr342va66R2PXJYxBVjXo');
             $from_coordinate = json_decode($from_coord, true);
-            $f=$from_coordinate['results'][0]['geometry']['location'];
+            $f = $from_coordinate['results'][0]['geometry']['location'];
 
-            $distance_data = file_get_contents('https://maps.googleapis.com/maps/api/distancematrix/json?&origins='.$to.'&destinations='.$from.'&key=AIzaSyA86O2e55O4nvcr342va66R2PXJYxBVjXo');
+            $distance_data = file_get_contents('https://maps.googleapis.com/maps/api/distancematrix/json?&origins=' . $to . '&destinations=' . $from . '&key=AIzaSyA86O2e55O4nvcr342va66R2PXJYxBVjXo');
             $distance_arr = json_decode($distance_data);
             return response()->json([
                "officeCoordinate" => $t,
                "clientCoordinate" => $f,
-               "directionMatrix"=> $distance_arr
-          ]);
+               "directionMatrix" => $distance_arr
+            ]);
          }
-         if($request->id == 48){
+         if ($request->id == 48) {
             $query = DB::table("CRM_CLIENT_BUSINESS_PLACE")
-            ->insert([
-               "CLIENT_ID" => $request->clientId,
-               "NAME" => $request->placeName,
-               "PLACE_ID" => $request->placeId,
-               "COORDINATE" => json_encode($request->placeCoordinate)
-            ]);
+               ->insert([
+                  "CLIENT_ID" => $request->clientId,
+                  "NAME" => $request->placeName,
+                  "PLACE_ID" => $request->placeId,
+                  "COORDINATE" => json_encode($request->placeCoordinate)
+               ]);
             return response()->json([
-                'success' => true,
-                'status' => 201,
+               'success' => true,
+               'status' => 201,
             ]);
-         }   
-         if($request->handbook == "clientBusinessPoint"){
+         }
+         if ($request->handbook == "clientBusinessPoint") {
             $query = DB::table("CRM_SPR_BUSINESS_PLACE")
-            ->get();
+               ->get();
             return sprClientBusinessPoint::collection($query)->all();
          }
       }
-      if($request->type == "changeVisit"){
-         if($request->action == "setTime"){
+      if ($request->type == "changeVisit") {
+         if ($request->action == "setTime") {
             $query = DB::table("CRM_VISIT_TO_DATE_PROPERTIES")
-            ->where("ID", $request->propId)
-            ->update([
-               "TIME_MEETING"=> $request->timeMeeting,
-            ]);
+               ->where("ID", $request->propId)
+               ->update([
+                  "TIME_MEETING" => $request->timeMeeting,
+               ]);
             return response()->json([
                "$request->propId, set to time"
             ]);
          }
-         if($request->action == "deleteClient"){
+         if ($request->action == "deleteClient") {
             $query = DB::table("CRM_VISIT_TO_DATE_PROPERTIES")
-            ->where("ID", $request->propId)
-            ->delete();
+               ->where("ID", $request->propId)
+               ->delete();
             return response()->json([
                "$request->propId, delete"
             ]);
-         }  
+         }
       }
-      if($request->type == "profileClient"){
-         if($request->action == "getMainInf"){
+      if ($request->type == "profileClient") {
+         if ($request->action == "getMainInf") {
             $query = DB::table("CRM_CLIENT_INFO as cci")
-            ->leftJoin("CRM_CLIENT_ID_GUID as ccig", "ccig.ID", "cci.CLIENT_ID")
-            ->select("cci.ID", "cci.ADDRESS", "NAME", DB::raw("CASE WHEN ccig.GUID IS NULL THEN 0 WHEN ccig.GUID IS NOT NULL THEN 1 END as guid"), "IIN_BIN", "CATO", "DEYATELNOST", "REGION","DISTRICT")
-            ->where("cci.ID", $request->clientId)
-            ->get();
+               ->leftJoin("CRM_CLIENT_ID_GUID as ccig", "ccig.ID", "cci.CLIENT_ID")
+               ->select("cci.ID", "cci.ADDRESS", "NAME", DB::raw("CASE WHEN ccig.GUID IS NULL THEN 0 WHEN ccig.GUID IS NOT NULL THEN 1 END as guid"), "IIN_BIN", "CATO", "DEYATELNOST", "REGION", "DISTRICT")
+               ->where("cci.ID", $request->clientId)
+               ->get();
             return getMainInfCli::collection($query)->all();
          }
-         if($request->action == "getMngVisit"){
+         if ($request->action == "getMngVisit") {
             $query = DB::table("CRM_VISIT_TO_DATE_PROPERTIES as cvtdp")
-            ->leftJoin("CRM_VISIT_TO_DATE as cvtd", "cvtd.ID", "cvtdp.VISIT_ID")
-            ->where("cvtdp.CLIENT_ID", $request->clientId)
-            ->get();
+               ->leftJoin("CRM_VISIT_TO_DATE as cvtd", "cvtd.ID", "cvtdp.VISIT_ID")
+               ->where("cvtdp.CLIENT_ID", $request->clientId)
+               ->get();
             return response($query);
          }
-         if($request->action == "getContracts"){
+         if ($request->action == "getContracts") {
             $query = DB::table("CRM_DOGOVOR as cd")
-            ->leftJoin("CRM_CLIENT_ID_GUID as ccig", "ccig.GUID", "cd.KONTRAGENT_GUID")
-            ->where("ccig.ID", $request->clientId)
-            ->get();
-            if($query->isEmpty()){
+               ->leftJoin("CRM_CLIENT_ID_GUID as ccig", "ccig.GUID", "cd.KONTRAGENT_GUID")
+               ->where("ccig.ID", $request->clientId)
+               ->get();
+            if ($query->isEmpty()) {
                return response()->json([
-                 "message" =>  "didn't contracts",
-                 "status" => false
+                  "message" =>  "didn't contracts",
+                  "status" => false
                ]);
-            }
-            else{
-               if(count($query)>15){
+            } else {
+               if (count($query) > 15) {
                   return getContracts::collection($query);
-               }
-               else{
+               } else {
                   return getContracts::collection($query);
                }
             }
          }
-         if($request->action == "getLastContract"){
+         if ($request->action == "getLastContract") {
             $query = DB::table("CRM_CLIENT_ID_GUID as cig")
-            ->select("cd.ID","cd.NAIMENOVANIE", "cd.DATA_NACHALA_DEYSTVIYA","cd.DATA_OKONCHANIYA_DEYSTVIYA", "cd.NOMER", "cd.STATUS", "cd.KONTRAGENT", "cd.MENEDZHER AS manager", "cd.SEZON", "cd.ADRES_DOSTAVKI", "cd.SUMMA_KZ_TG")
-            ->join("CRM_DOGOVOR as cd", "cd.KONTRAGENT_GUID", "cig.GUID")
-            ->where("cig.ID", $request->clientId)
-            ->get();
-            return getLastContract::collection($query)->all(); 
+               ->select("cd.ID", "cd.NAIMENOVANIE", "cd.DATA_NACHALA_DEYSTVIYA", "cd.DATA_OKONCHANIYA_DEYSTVIYA", "cd.NOMER", "cd.STATUS", "cd.KONTRAGENT", "cd.MENEDZHER AS manager", "cd.SEZON", "cd.ADRES_DOSTAVKI", "cd.SUMMA_KZ_TG")
+               ->join("CRM_DOGOVOR as cd", "cd.KONTRAGENT_GUID", "cig.GUID")
+               ->where("cig.ID", $request->clientId)
+               ->get();
+            return getLastContract::collection($query)->all();
          }
-         if($request->action == "getSubcides"){
+         if ($request->action == "getSubcides") {
             $query = DB::table("CRM_SHYMBULAK_SUBSIDIES as css")
-            ->leftJoin("CRM_CLIENT_INFO as cci", "cci.IIN_BIN", "css.APPLICANT_IIN_BIN")
-            ->where("cci.ID", $request->clientId)
-            ->get();
+               ->leftJoin("CRM_CLIENT_INFO as cci", "cci.IIN_BIN", "css.APPLICANT_IIN_BIN")
+               ->where("cci.ID", $request->clientId)
+               ->get();
             return getSubcides::collection($query)->all();
          }
-         if($request->action == "setContacts"){
+         if ($request->action == "setContacts") {
             $query = DB::table("CRM_CLIENT_CONTACTS")
-            ->where("CLIENT_ID", $request->clientId)
-            ->where("ID", $request->contactId);
-            if($request->position){
+               ->where("CLIENT_ID", $request->clientId)
+               ->where("ID", $request->contactId);
+            if ($request->position) {
                $query->update([
                   "POSITION" => $request->position,
                ]);
             }
-            if($request->name){
+            if ($request->name) {
                $query->update([
                   "NAME" => $request->name
                ]);
             }
-            if($request->phoneNumber){
+            if ($request->phoneNumber) {
                $query->update([
                   "PHONE_NUMBER" => $request->phoneNumber
                ]);
             }
-            if($request->email){
+            if ($request->email) {
                $query->update([
                   "EMAIL" => $request->email
                ]);
@@ -574,37 +590,255 @@ class WorkSpaceController extends Controller
                "status" => true
             ]);;
          }
-         if($request->action == "setMainInf"){
+         if ($request->action == "setMainInf") {
             $query = DB::table("CRM_CLIENT_INFO")
-            ->where("ID", $request->clientId)
-            ->update([
-               "ADDRESS" => $request->address
-            ]);
+               ->where("ID", $request->clientId)
+               ->update([
+                  "ADDRESS" => $request->address
+               ]);
             return response()->json([
                "message" => "Record update",
                "status" => true
             ]);
          }
-         if($request->action == "getSuppMngr"){
+         if ($request->action == "getSuppMngr") {
             $subQuery = DB::table("CRM_CLIENT_ID_GUID as ccig")
-            ->select("cu.ID", "cu.NAIMENOVANIE", "cu.DIREKTSYA", "cu.DOLZHNOST", "SEZON")
-            ->leftJoin("CRM_DOGOVOR as cd", "cd.KONTRAGENT_GUID", "ccig.GUID")
-            ->leftJoin("CRM_USERS as cu", "cu.GUID", "cd.MENEDZHER_GUID")
-            ->where("ccig.ID", $request->clientId)
-            ->groupBy("cu.ID", "cu.NAIMENOVANIE", "cu.DIREKTSYA", "cu.DOLZHNOST", "SEZON")
-            ->orderByDesc("SEZON")
-            ->get();
-          return getSuppMngr::collection($subQuery)->all();
+               ->select("cu.ID", "cu.NAIMENOVANIE", "cu.DIREKTSYA", "cu.DOLZHNOST", "SEZON")
+               ->leftJoin("CRM_DOGOVOR as cd", "cd.KONTRAGENT_GUID", "ccig.GUID")
+               ->leftJoin("CRM_USERS as cu", "cu.GUID", "cd.MENEDZHER_GUID")
+               ->where("ccig.ID", $request->clientId)
+               ->groupBy("cu.ID", "cu.NAIMENOVANIE", "cu.DIREKTSYA", "cu.DOLZHNOST", "SEZON")
+               ->orderByDesc("SEZON")
+               ->get();
+            return getSuppMngr::collection($subQuery)->all();
          }
-         if($request->action == "getBusinessPoint"){
+         if ($request->action == "getBusinessPoint") {
             $query = DB::table("CRM_CLIENT_BUSINESS_PLACE as ccbp")
-            ->select("ccbp.ID", "ccbp.CLIENT_ID", "ccbp.NAME", "ccbp.COORDINATE", "csbp.NAME as NAME_C")
-            ->leftJoin("CRM_SPR_BUSINESS_PLACE as csbp", "csbp.ID", "ccbp.PLACE_ID")
-            ->where("CLIENT_ID", $request->clientId)
-            ->get();
+               ->select("ccbp.ID", "ccbp.CLIENT_ID", "ccbp.NAME", "ccbp.COORDINATE", "csbp.NAME as NAME_C")
+               ->leftJoin("CRM_SPR_BUSINESS_PLACE as csbp", "csbp.ID", "ccbp.PLACE_ID")
+               ->where("CLIENT_ID", $request->clientId)
+               ->get();
             return getBusinessPoint::collection($query)->all();
          }
+      }
+      if ($request->type == "getClientXL") {
+         $query = DB::connection("X_L")
+            ->table("070440002121")
+            ->select(
+            DB::raw('ROW_NUMBER() OVER(ORDER BY SUM("Стоимость товаров, работ, услуг с учетом косвенных налогов") DESC) AS Row'), 
+            "Наименование получателя по данным ИС ЭСФ as clientName", 
+            DB::raw('SUM("Стоимость товаров, работ, услуг с учетом косвенных налогов") as sumClient'), 
+            "ИИН/БИН1 as clientIin", 
+            "Адрес места нахождения1 as clientAddress"
+            )
+            ->limit('100')
+            ->groupBy("Наименование получателя по данным ИС ЭСФ", "БИК", "ИИН/БИН1", "Адрес места нахождения1")
+            ->orderByDesc('sumClient')
+            ->get();
+         return $query;
+      }
+      if ($request->type == "getClientDetailXL") {
+         $query = DB::connection("X_L")
+            ->table("070440002121")
+            ->select("Наименование получателя по данным ИС ЭСФ as clientName", "Адрес места нахождения1 as clientAddress", DB::raw('SUM("Кол-во (объем)") as volume'), DB::raw('SUM("Стоимость товаров, работ, услуг с учетом косвенных налогов") as sumClient'))
+            ->where("ИИН/БИН1", $request->clientIin)
+            ->groupBy("Наименование получателя по данным ИС ЭСФ", "Адрес места нахождения1")
+            ->limit(1)
+            ->get();
+         return $query;
+      }
+      if ($request->type == "getClientPivot") {
+         $query = DB::connection("X_L")
+            ->table("070440002121")
+            ->select(
+               DB::raw("ROW_NUMBER() OVER(ORDER BY БИК ASC) AS Row"),
+               "Наименование AS provider",
+               "Дата договора (контракта) на поставку ТРУ as dateContract",
+               "Наименование ТРУ AS productName",
+               "Наименование товаров в соответствии с Декларацией на товары или  AS alternativeName",
+               "Кол-во (объем) as volume",
+               'Стоимость товаров, работ, услуг с учетом косвенных налогов as sumContract'
+            )
+            ->where("ИИН/БИН1", $request->clientIin)
+            ->get();
+         return $query;
+      }
+      if ($request->type == "getProviderXL") {
+         $squery = DB::connection("X_L")
+            ->table("120240010593")
+            ->select(
+            "Наименование поставщика по данным ИС ЭСФ as clientName", 
+            DB::raw('SUM("Стоимость товаров, работ, услуг с учетом косвенных налогов") as sumProvider'), 
+            "ИИН/БИН as providerIin", 
+            "Адрес места нахождения as providerAddress"
+            )
+            ->groupBy("Наименование поставщика по данным ИС ЭСФ", "ИИН/БИН", "Адрес места нахождения");
+            
+            $qquery = DB::connection("X_L")
+            ->table("070440002121")
+            ->select( 
+            "Наименование поставщика по данным ИС ЭСФ", 
+            DB::raw('SUM("Стоимость товаров, работ, услуг с учетом косвенных налогов") as sumProvider'), 
+            "ИИН/БИН as providerIin", 
+            "Адрес места нахождения as providerAddress"
+            )
+            ->groupBy("Наименование поставщика по данным ИС ЭСФ", "ИИН/БИН", "Адрес места нахождения");
+            
+            $zquery = DB::connection("X_L")
+            ->table("150140027391")
+            ->select(
+            "Наименование поставщика по данным ИС ЭСФ", 
+            DB::raw('SUM("Стоимость товаров, работ, услуг с учетом косвенных налогов") as sumProvider'), 
+            "ИИН/БИН as providerIin", 
+            "Адрес места нахождения as providerAddress"
+            )
+            ->groupBy("Наименование поставщика по данным ИС ЭСФ", "ИИН/БИН", "Адрес места нахождения");
+            
+            $yquery = DB::connection("X_L")
+            ->table("151040000507")
+            ->select(
+            "Наименование поставщика по данным ИС ЭСФ", 
+            DB::raw('SUM("Стоимость товаров, работ, услуг с учетом косвенных налогов") as sumProvider'), 
+            "ИИН/БИН as providerIin", 
+            "Адрес места нахождения as providerAddress"
+            )
+            ->groupBy("Наименование поставщика по данным ИС ЭСФ", "ИИН/БИН", "Адрес места нахождения");
+
+         $query = DB::connection("X_L")
+            ->table("161240021142")
+            ->select(
+            "Наименование поставщика по данным ИС ЭСФ as clientName", 
+            DB::raw('SUM("Стоимость товаров, работ, услуг с учетом косвенных налогов") as sumProvider'), 
+            "ИИН/БИН as providerIin", 
+            "Адрес места нахождения as providerAddress"
+            )
+            ->limit('10')
+            ->groupBy("Наименование поставщика по данным ИС ЭСФ",  "ИИН/БИН", "Адрес места нахождения")
+            ->orderByDesc('sumProvider')
+            ->unionAll($squery)->unionAll($qquery)->unionAll($zquery)->unionAll($yquery)
+            ->get();
+         return $query;
+      }
+      if ($request->type == "getProviderDetailXL") {
+         $query = DB::connection("X_L")
+            ->table("150140027391")
+            ->select("Наименование поставщика по данным ИС ЭСФ as clientName", "Адрес места нахождения as clientAddress", DB::raw('SUM("Кол-во (объем)") as volume'), DB::raw('SUM("Стоимость товаров, работ, услуг с учетом косвенных налогов") as sumClient'))
+            ->where("ИИН/БИН", $request->providerIin)
+            ->groupBy("Наименование поставщика по данным ИС ЭСФ", "Адрес места нахождения");
+         $squery = DB::connection("X_L")
+            ->table("070440002121")
+            ->select("Наименование поставщика по данным ИС ЭСФ as clientName", "Адрес места нахождения as clientAddress", DB::raw('SUM("Кол-во (объем)") as volume'), DB::raw('SUM("Стоимость товаров, работ, услуг с учетом косвенных налогов") as sumClient'))
+            ->where("ИИН/БИН", $request->providerIin)
+            ->groupBy("Наименование поставщика по данным ИС ЭСФ", "Адрес места нахождения");
+         $zquery = DB::connection("X_L")
+            ->table("120240010593")
+            ->select("Наименование поставщика по данным ИС ЭСФ as clientName", "Адрес места нахождения as clientAddress", DB::raw('SUM("Кол-во (объем)") as volume'), DB::raw('SUM("Стоимость товаров, работ, услуг с учетом косвенных налогов") as sumClient'))
+            ->where("ИИН/БИН", $request->providerIin)
+            ->groupBy("Наименование поставщика по данным ИС ЭСФ", "Адрес места нахождения");
+         $yquery = DB::connection("X_L")
+            ->table("151040000507")
+            ->select("Наименование поставщика по данным ИС ЭСФ as clientName", "Адрес места нахождения as clientAddress", DB::raw('SUM("Кол-во (объем)") as volume'), DB::raw('SUM("Стоимость товаров, работ, услуг с учетом косвенных налогов") as sumClient'))
+            ->where("ИИН/БИН", $request->providerIin)
+            ->groupBy("Наименование поставщика по данным ИС ЭСФ", "Адрес места нахождения");
+
+         $pquery = DB::connection("X_L")
+            ->table("161240021142")
+            ->select("Наименование поставщика по данным ИС ЭСФ as clientName", "Адрес места нахождения as clientAddress", DB::raw('SUM("Кол-во (объем)") as volume'), DB::raw('SUM("Стоимость товаров, работ, услуг с учетом косвенных налогов") as sumClient'))
+            ->where("ИИН/БИН", $request->providerIin)
+            ->groupBy("Наименование поставщика по данным ИС ЭСФ", "Адрес места нахождения")
+            ->unionAll($yquery)->unionAll($zquery)->unionAll($squery)->unionAll($query)
+            ->get();
          
+         return $pquery;
+      }
+      if ($request->type == "getProviderPivot") {
+         $query = DB::connection("X_L");
+         if($request->providerIin == "150140027391"){
+            $query
+            ->table("150140027391")
+            ->select(
+               DB::raw("ROW_NUMBER() OVER(ORDER BY БИК ASC) AS Row"),
+               "Наименование получателя по данным ИС ЭСФ AS provider",
+               "Дата договора (контракта) на поставку ТРУ as dateContract",
+               "Наименование ТРУ AS productName",
+               "Наименование товаров в соответствии с Декларацией на товары или  AS alternativeName",
+               "Кол-во (объем) as volume",
+               'Стоимость товаров, работ, услуг с учетом косвенных налогов as sumContract'
+            )
+            ->where("ИИН/БИН", $request->providerIin)
+            ->where('Кол-во (объем)','>', 0)
+            ->orderByDesc("Стоимость товаров, работ, услуг с учетом косвенных налогов")
+            ->get();
+         }
+         if($request->providerIin == "120240010593"){
+         $query = DB::connection("X_L")
+            ->table("120240010593")
+            ->select(
+               DB::raw("ROW_NUMBER() OVER(ORDER BY БИК ASC) AS Row"),
+               "Наименование получателя по данным ИС ЭСФ AS provider",
+               "Дата договора (контракта) на поставку ТРУ as dateContract",
+               "Наименование ТРУ AS productName",
+               "Наименование товаров в соответствии с Декларацией на товары или  AS alternativeName",
+               "Кол-во (объем) as volume",
+               'Стоимость товаров, работ, услуг с учетом косвенных налогов as sumContract'
+            )
+            ->where("ИИН/БИН", $request->providerIin)
+            ->where('Кол-во (объем)','>', 0)
+            ->orderByDesc("Стоимость товаров, работ, услуг с учетом косвенных налогов")
+            ->get();
+         }
+         if($request->providerIin == "151040000507"){
+         $query = DB::connection("X_L")
+            ->table("151040000507")
+            ->select(
+               DB::raw("ROW_NUMBER() OVER(ORDER BY БИК ASC) AS Row"),
+               "Наименование получателя по данным ИС ЭСФ AS provider",
+               "Дата договора (контракта) на поставку ТРУ as dateContract",
+               "Наименование ТРУ AS productName",
+               "Наименование товаров в соответствии с Декларацией на товары или  AS alternativeName",
+               "Кол-во (объем) as volume",
+               'Стоимость товаров, работ, услуг с учетом косвенных налогов as sumContract'
+            )
+            ->where("ИИН/БИН", $request->providerIin)
+            ->where('Кол-во (объем)','>', 0)
+            ->orderByDesc("Стоимость товаров, работ, услуг с учетом косвенных налогов")
+            ->get();
+         }
+         if($request->providerIin == "161240021142"){
+         $query = DB::connection("X_L")
+            ->table("161240021142")
+            ->select(
+               DB::raw("ROW_NUMBER() OVER(ORDER BY БИК ASC) AS Row"),
+               "Наименование получателя по данным ИС ЭСФ AS provider",
+               "Дата договора (контракта) на поставку ТРУ as dateContract",
+               "Наименование ТРУ AS productName",
+               "Наименование товаров в соответствии с Декларацией на товары или  AS alternativeName",
+               "Кол-во (объем) as volume",
+               'Стоимость товаров, работ, услуг с учетом косвенных налогов as sumContract'
+            )
+            ->where("ИИН/БИН", $request->providerIin)
+            ->where('Кол-во (объем)','>', 0)
+            ->orderByDesc("Стоимость товаров, работ, услуг с учетом косвенных налогов")
+            ->get();
+         }
+         if($request->providerIin == "070440002121"){
+         $query = DB::connection("X_L")
+            ->table("070440002121")
+            ->select(
+               DB::raw("ROW_NUMBER() OVER(ORDER BY БИК ASC) AS Row"),
+               "Наименование получателя по данным ИС ЭСФ AS provider",
+               "Дата договора (контракта) на поставку ТРУ as dateContract",
+               "Наименование ТРУ AS productName",
+               "Наименование товаров в соответствии с Декларацией на товары или  AS alternativeName",
+               "Кол-во (объем) as volume",
+               'Стоимость товаров, работ, услуг с учетом косвенных налогов as sumContract'
+            )
+            ->where("ИИН/БИН", $request->providerIin)
+            ->where('Кол-во (объем)','>', 0)
+            ->orderByDesc("Стоимость товаров, работ, услуг с учетом косвенных налогов")
+            ->get();
+         }
+         return $query;
       }
    }
    // public function __construct()

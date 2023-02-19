@@ -70,5 +70,4 @@ class FeedBackController extends Controller
             }
         }
     }
-    
 }

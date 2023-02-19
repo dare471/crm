@@ -58,7 +58,7 @@ class AuthController extends Controller
         $user = User::create(
             array_merge($validator->validated(), ['password' => bcrypt($request->password)])
         );
-        $token_validity = (24*1); //24ч*60м
+        $token_validity = (12*0.5); //24ч*60м
 
         $this->guard()->factory()->setTTL($token_validity);
         if(!$token = $this->guard()->attempt($validator->validated())) 

@@ -89,7 +89,6 @@ class AnalysesController extends Controller
             'data' => 'Успешно удалено'
         ]);
     }
-
     // protected function guard() {
     //     return Auth::guard();
     // }
