@@ -43,7 +43,6 @@ class AnalysesController extends Controller
         ]);
     }
 
-  
     public function showID($id)
     {
         $analyses = Analyses::where('provider', 'like', "{$id}%")->get(); //join('geos', 'geos.owner', '=', 'contragents.IIN_BIN')->
@@ -88,6 +87,25 @@ class AnalysesController extends Controller
             'statuscode' => 202,
             'data' => 'Успешно удалено'
         ]);
+    }
+
+    public function KPI(Request $request){
+        if($request->action == "getGradeAllMng"){
+            $query = DB::table("CRM_KPI_MANAGER_GRADE")
+            ->get();
+            return $query;
+        }
+        if($request->action == "getKpiBasis"){
+            $query = DB::table("CRM_KPI_BASIS")
+            ->get();
+            return $query;
+        }
+        if($request->action == "getMngRegion"){
+            $query = DB::table("CRM_USERS")
+            ->where("")
+            ->get();
+            return $query;
+        }
     }
     // protected function guard() {
     //     return Auth::guard();
