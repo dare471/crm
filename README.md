@@ -62,7 +62,4 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 =======
-# crm_backend
-crm_backend
->>>>>>> d80410289a25b8f47b792fca2739f14bb2728cc4
 # crm
