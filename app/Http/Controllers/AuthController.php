@@ -116,13 +116,19 @@ class AuthController extends Controller
         foreach($query as $q){
             array_push($arr, (int)$q->CLIENT_ID);
         }
+        $tg = DB::table("CRM_USERS as cu")
+        ->leftJoin("users as ss", "ss.email", "cu.ADRES_E_P")
+        ->where("ss.ID", $this->guard()->user()->id)
+        ->value("TELEGRAM_ID");
 
         return response()->json([
             'user'=>['id'=>$this->guard()->user()->id,
             'email'=>$this->guard()->user()->email,
             'name'=>$this->guard()->user()->name,
             'access_availability'=>json_decode($this->guard()->user()->access_availability),
-            'workPosition'=>$this->guard()->user()->work_position,
+            "version" => (float)"0.1",
+            "telegramId" => $tg,
+            'workPosition'=>'null',
             'active'=>(int)$this->guard()->user()->activated,
             'unFollowClients'=>json_decode($this->guard()->user()->unfollowClient)->clientId,
             'favoriteClients' => $arr,

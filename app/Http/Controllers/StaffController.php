@@ -293,7 +293,7 @@ public function District($kat_f){
         $query = $dbconn->select("
         SELECT 
         CONVERT(NVARCHAR(MAX), CD.GUID, 1) AS CONTRACTS_GUID,
-        CU.ID AS MANAGER_ID,
+        CU.ID AS MANAGER_ID, int,
         CU.NAIMENOVANIE AS MANAGER_NAME,
         CU.DIREKTSYA,
         CU.DOLZHNOST,
@@ -464,14 +464,14 @@ public function District($kat_f){
     {
         $dbconn = DB::connection('CRM_DWH');
         $query = $dbconn->select("
-        SELECT NAIMENOVANIE, ADRES_E_P
-        FROM CRM_DWH.dbo.CRM_USERS 
+        SELECT NAIMENOVANIE, ADRES_E_P, I_I_N
+        FROM CRM_DWH.dbo.CRM_USERS_2
         WHERE ADRES_E_P LIKE '%@alemagro%' 
         ");
         foreach ($query as $t) {
             $curl = curl_init();
             curl_setopt_array($curl, array(
-                CURLOPT_URL => '192.168.1.16/api/auth/register',
+                CURLOPT_URL => '10.200.100.17/api/auth/register',
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_ENCODING => '',
                 CURLOPT_MAXREDIRS => 10,
@@ -479,7 +479,7 @@ public function District($kat_f){
                 CURLOPT_FOLLOWLOCATION => true,
                 CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
                 CURLOPT_CUSTOMREQUEST => 'POST',
-                CURLOPT_POSTFIELDS => 'email=' . $t->ADRES_E_P . '&password=' . $t->ADRES_E_P . '&name=' . $t->NAIMENOVANIE . '',
+                CURLOPT_POSTFIELDS => 'email=' . $t->ADRES_E_P . '&password=' . $t->I_I_N . '&name=' . $t->NAIMENOVANIE . '',
                 CURLOPT_HTTPHEADER => array(
                     'Content-Type: application/x-www-form-urlencoded'
                 ),

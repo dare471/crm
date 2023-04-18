@@ -15,7 +15,7 @@ class getContracts extends JsonResource
     public function toArray($request)
     {
         return [
-            "id" => (int)$this->ID,
+            "id" => (int)$this->ID or $this->CLIENT_ID,
             "name" => $this->NAIMENOVANIE,
             "dateCreate" => $this->DATA,
             "dateStart" => $this->DATA_NACHALA_DEYSTVIYA,

@@ -26,6 +26,8 @@ class webhookUserSettings extends JsonResource
 
         return [
             "active" =>(int)$this->activated,
+            "version" => (float)"0.1",
+            "newVersionUrl"=>"https://crm.alemagro.com/mobile/v2/",
             "subscribesRegion" => json_decode($this->region_belongs)->region,
             "unFollowClients" => json_decode($this->unfollowClient)->clientId,        
             "favoriteClients" => $arr,

@@ -15,7 +15,7 @@ class RegionPolygonResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'id' => $this->KATO,
+            'id' => (int)$this->KATO,
             'type' => $this->type,
             'name' => $this->NAME,
             'population_area' => $this->population_area,

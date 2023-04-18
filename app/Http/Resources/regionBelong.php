@@ -15,7 +15,7 @@ class regionBelong extends JsonResource
     public function toArray($request)
     {
         return [
-            "id" => $this->ID,
+            "id" => (int)$this->ID,
             "name" => $this->NAME,
             "regionId" => $this->KATO
         ];

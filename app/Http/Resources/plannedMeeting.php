@@ -4,6 +4,8 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 use Carbon\Carbon;
+use phpDocumentor\Reflection\Types\Boolean;
+
 class plannedMeeting extends JsonResource
 {
     /**
@@ -15,15 +17,18 @@ class plannedMeeting extends JsonResource
     public function toArray($request)
     {
         return [ 
+                "visitId" => (int)$this->visitId,
+                "statusVisit" => (Boolean)$this->statusVisit,
                 "clientId" => (int)$this->ID,
                 "clientName" => $this->NAME,
+                "dateVisit" => $this->dateVisit,
                 "clientIin" => (int)$this->IIN_BIN,
                 "clientAddress" => $this->ADDRESS,
-                "visitName" => $this->visitName,
-                "visitId" => (int)$this->visitId,
-                "meetingId" => (int)$this->meetingId,
+                "visitTypeName" => $this->visitTypeName,
+                "visitTypeId" => (int)$this->visitTypeId,
+                "meetingTypeId" => (int)$this->meetingTypeId,
                 "meetingTime" => $this->timeMeeting,
-                "meetingName" => $this->meetingName,
+                "meetingTypeName" => $this->meetingTypeName,
                 "plotId" => (int)$this->plotId   
         ];
     }

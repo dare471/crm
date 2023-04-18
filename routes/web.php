@@ -17,5 +17,6 @@ Route::get('/', function () {
     return view('welcome', ['name' => 'Samantha']);
 });
 
+
 $router->group(['prefix' => 'api'], function () use ($router) {
 });

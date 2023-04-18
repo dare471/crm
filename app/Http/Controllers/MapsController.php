@@ -252,6 +252,10 @@ class MapsController extends Controller
                 ->leftJoin("CRM_CLIENT_ID_GUID as ccig", "ccig.ID", "cci.CLIENT_ID")
                 ->whereIn("cci.ID", $request->arrClient)
                 ->get();
+
+                // $querySum = DB::table("CRM_CLIENT_INFO as cci")
+                // ->select("")
+                // ->get();
                 return filterPlotsGetInfClient::collection($query)->all();
             }
         }
@@ -270,13 +274,8 @@ class MapsController extends Controller
                     "CSC.ID as id",
                     "CSC.NAME as nameCult",
                     DB::raw("count(CCR.ID) as countPlot")
-                );
-                if($district){
-                    $query->where("CCI.DISTRICT", $district);
-                }
-                if($region){
-                    $query->where("CCI.REGION", $region);
-                }    
+                )
+                ->where("CCI.DISTRICT", $request->districtId);
                     $response = FilterSprCultMaps::collection($query->groupBy("CSC.ID", "CSC.NAME")->get())->all();
                 }
                 if($request->type == "searchIin"){
@@ -423,6 +422,9 @@ public function MapsControll(Request $request){
             }
             if($request->culture){
                 $query->whereIn("CCP.CULTURE", $request->culture);
+            }
+            if($request->region){
+                $query->whereIn("CCI.DISTRICT", $request->region);
             }
             $rep = $query->groupBy("CCI.ID", "CCI.NAME", "CCI.IIN_BIN")->get();
             return response($rep);

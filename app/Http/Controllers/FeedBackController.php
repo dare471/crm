@@ -30,6 +30,7 @@ class FeedBackController extends Controller
                     'CATEGORY_CHAPTER_ID' => $request->categoryChapterId,
                     'TYPE' => $request->typeComment,
                 ]);
+                return response()->json(["message" => 0]);
             }
             if($request->action == "answerComment"){
                 $query = DB::table("CRM_COMMENT_ELEMENT")

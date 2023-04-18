@@ -55,10 +55,14 @@ Route::group([
     Route::post("/country", "MapsController@MainController");
     Route::post("/filterPlots", "MapsController@MapsClient");
     Route::post("/mainquery", "MapsController@FilterForMaps");
+    Route::post("/mainquery/v2", "MapsController@MapsControll");
     Route::post("/history/maps", "HistoryBrowsingController@HistoryBrowsing");
     Route::post("/analytics", "MapsAnalyticsController@AnalyticsMaps");
     Route::post("/analyse", "ClientAnalyticController@Analyse");
+    Route::post("/client", "ClientAnalyticController@clientInformation");
     Route::post("/weebhook/user", "UserSettingsController@WebhookParametrs");
+    Route::post("/user/info", "ProfileControtroller@ProfileClusterFunc");
+    Route::post("/user/service/onec", "CServiceForOnecController@LogicForService");
     //END
 
     //Api for WEB v2
@@ -69,6 +73,7 @@ Route::group([
     Route::post("/manager/analyse/user", "StaffController@ManagerAnalyse");
     Route::post("/user/setting", "UserSettingsController@UserSettings");
     Route::post("/manager/workspace", "WorkSpaceController@UserPlace");
+    Route::POST("/mobile", "ResponseClusterController@ResponseHeadersFunction"); //version for mobile and response cluster 
     //END
     
     //api for web

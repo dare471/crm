@@ -25,7 +25,7 @@ class getLastContract extends JsonResource
             "manager" => $this->manager,
             "season" => $this->SEZON,
             "deliveryAddress" => $this->ADRES_DOSTAVKI,
-            "sum" => (int)$this->SUMMA_KZ_TG
+            "sum" => number_format((int)$this->SUMMA_KZ_TG, 2, '.', ' ')
         ];
     }
 }

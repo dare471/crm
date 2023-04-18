@@ -15,7 +15,7 @@ class DistrictPolygonResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'id' =>  $this->district,
+            'id' =>  (int)$this->district,
             'type' => $this->type,
             'name' => $this->TEXT,
             'klkod' => $this->KLKOD,

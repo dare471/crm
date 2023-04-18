@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Http\Resources\AllContracts;
+use Illuminate\Support\Facades\DB;
 use App\Http\Resources\RegionPolygonResource;
 use App\Http\Resources\DistrictPolygonResource;
 use App\Http\Resources\ClientsFieldsPolygonResource;
@@ -71,7 +72,47 @@ class ResponseClusterController extends Controller
             ]);
         }
     }
-    public function ResponseHeadersFunction(){
-
+    public function ResponseHeadersFunction(Request $request){
+        switch($request->action){
+            case "uploadNewApk":
+                return $this->uploadNewApk($request);
+                break;
+            case "getNewVersion":
+                return $this->getNewVersion($request);
+                break;
+            default: 
+                return collect([
+                    "message" => "correct type !!"
+                ]);
+        }
+    }
+    private function getNewVersion($request){
+        $qq = DB::table("CRM_MOBILE_VERSION")
+        ->orderByDesc("id")
+        ->limit(1)
+        ->get();
+        return $qq->first();
+        // return $qq->map(function ($item){
+        //     collect([
+        //         "id" => $item->id,
+        //         "version" => $item->version,
+        //         "url" => $item->url
+        //     ])->first();
+        // });  
+    }
+    private function uploadNewApk(Request $request){
+        $file = $request->file('file');
+        // Генерируем уникальное имя для файла
+        $filename = uniqid() . '_' . $file->getClientOriginalName();
+        $file->move(public_path('uploads'), $filename);
+        $version = DB::table("CRM_MOBILE_VERSION")
+        ->insert([
+            "version" => $request->versionName,
+            "url" => 'https://crm.aleamgro.com:8080/uploads/' . $filename
+        ]);
+        return collect([
+            "message" => "file upload",
+            "status" => true
+        ]);
     }
 }
