@@ -15,8 +15,8 @@ class sprTypeVisit extends JsonResource
     public function toArray($request)
     {
         return [
-            "id" => (int)$this->id,
-            "name" => $this->name
+            "id" => (int)$this->ID,
+            "name" => $this->NAME,
         ];
     }
 }

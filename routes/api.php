@@ -61,8 +61,7 @@ Route::group([
     Route::post("/analyse", "ClientAnalyticController@Analyse");
     Route::post("/client", "ClientAnalyticController@clientInformation");
     Route::post("/weebhook/user", "UserSettingsController@WebhookParametrs");
-    Route::post("/user/info", "ProfileControtroller@ProfileClusterFunc");
-    Route::post("/user/service/onec", "CServiceForOnecController@LogicForService");
+  
     //END
 
     //Api for WEB v2
@@ -73,9 +72,26 @@ Route::group([
     Route::post("/manager/analyse/user", "StaffController@ManagerAnalyse");
     Route::post("/user/setting", "UserSettingsController@UserSettings");
     Route::post("/manager/workspace", "WorkSpaceController@UserPlace");
-    Route::POST("/mobile", "ResponseClusterController@ResponseHeadersFunction"); //version for mobile and response cluster 
+    Route::POST("/mobile", "ResponseClusterController@ResponseHeadersFunction");  //version for mobile and response cluster 
+    Route::post("/user/info", "ProfileControtroller@ProfileClusterFunc");
+    Route::post("/user/service/onec", "CServiceForOnecController@LogicForService");
+    Route::post("/staf/controller/order", "OrderController@LogicController");
+    Route::post("/contest", "ContestController@ControllerConditionContest");
+    Route::post("/contest/progress", "ContestController@ProgressBar");
+    Route::post("/contest/allusers", "ContestController@TableAll");
+    Route::post("/auth/client", "ClientAuthController@index");
+    
+    Route::post("/workspace/mobile", "WorkSpaceMobileController@MainRouteCondition");
     //END
     
+    //Api for Mobile
+    Route::post("/mobile/client/dashboard", "UserDashboardController@RouteCase");
+    Route::post("/planned/mobile", "PlannedMeetingForMobileController@MainRouteCondition");
+    ///end
+    ///Api for Bastau Agro Finance
+    Route::post("/getdata/bastau", "ServiceForBaf@MethodControllers");
+
+
     //api for web
     Route::get('/contracts/{user_id}', 'StaffController@ListOrders');
     Route::get('/contracts/client/{client_id}', 'StaffController@AllOrdersClient');
@@ -84,6 +100,7 @@ Route::group([
     Route::get('/client_info/all/{id}', 'StaffController@Client_list');
     Route::get('/client_info/{guid}', 'StaffController@ClientInfo');
     Route::get('/client_info/managerlink/{id}', 'StaffController@ManagerClientLink');
+    
     //END
 
 //user controller

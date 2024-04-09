@@ -100,6 +100,15 @@ class ClientAnalyticController extends Controller
                     case "getContact":
                         return $this->getContact($request);
                         break;
+                    case "updateContact":
+                        return $this->updateContactClient($request);
+                        break;
+                        case "setContacts":
+                            return $this->setContacts($request);
+                            break;
+                    // case "setContactClient":
+                    //     return $this->setContactClient($request);
+                    //     break;
                     case "getSubscidesList":
                         return $this->getSubscidesList($request);
                         break;
@@ -124,14 +133,15 @@ class ClientAnalyticController extends Controller
                     case "getCropRotation":
                         return $this->getCropRotation($request);
                         break;
-                    case "setContacts":
-                        return $this->setContacts($request);
-                        break;
+                    
                     case "setMainInf":
                         return $this->setMainInf($request);
                         break;
                     case "getContractAnalysis":
                         return $this->getContractAnalysis($request);
+                        break;
+                    case "getFile": 
+                        return $this->getFile($request);
                         break;
                 }
                 break;
@@ -141,10 +151,14 @@ class ClientAnalyticController extends Controller
     private function getMainInf(Request $request){
         $query = DB::table("CRM_CLIENT_INFO as cci")
         ->leftJoin("CRM_CLIENT_ID_GUID as ccig", "ccig.ID", "cci.CLIENT_ID")
-        ->select("cci.ID", "cci.ADDRESS", "NAME", DB::raw("CASE WHEN ccig.GUID IS NULL THEN 0 WHEN ccig.GUID IS NOT NULL THEN 1 END as guid"), "IIN_BIN", "CATO", "DEYATELNOST", "REGION", "DISTRICT")
+        ->select("cci.ID", "cci.ADDRESS", "cci.CLIENT_ID", "NAME", DB::raw("CASE WHEN ccig.GUID IS NULL THEN 0 WHEN ccig.GUID IS NOT NULL THEN 1 END as guid"), "IIN_BIN", "CATO", "DEYATELNOST", "REGION", "DISTRICT")
         ->where("cci.ID", $request->clientId)
         ->get();
      return getMainInfCli::collection($query)->first();
+    }
+    private function getFile(Request $request){
+        $query = DB::table("CRM_ as cci")
+        ->get();   
     }
     private function getLastContract(Request $request){
         $query = DB::table("CRM_CLIENT_ID_GUID as cig")
@@ -199,10 +213,12 @@ class ClientAnalyticController extends Controller
         ->leftJoin("CRM_CLIENT_ID_GUID as ccig", "ccig.GUID", "cd.KONTRAGENT_GUID")
         ->leftJoin("CRM_CLIENT_INFO as cci", "cci.CLIENT_ID", "ccig.ID")
         ->where("cci.ID", $request->clientId)
+        ->where("cd.STATUS", "Действует")
         ->groupBy("cd.SEZON","cci.ID")
         ->get();
         return GetContractAnalysis::collection($query)->all();
     }
+    
     private function getSubscidesList(Request $request){
         $bin = DB::table("CRM_CLIENT_INFO")
         ->where("ID", $request->clientId)
@@ -266,4 +282,36 @@ class ClientAnalyticController extends Controller
             "status" => true
          ]);
     }
+    private function setContactClient(Request $request){
+        $query = DB::table("CRM_CLIENT_CONTACTS")
+        ->insert([
+           "POSITION" => $request->position,
+           "CLIENT_ID" => $request->clientId,
+           "NAME" => $request->name, 
+           "PHONE_NUMBER" => $request->phNumber,
+           "EMAIL" => $request->email,
+           "AUTHOR_ID" => $request->userId,
+           "MAIN_CONTACT" => $request->mainC,
+           "DESCRIPTION" => $request->description
+        ]);
+        return response()->json([
+           "status" => true,
+           "message" => "sucess"
+        ]);
+     }
+    private function updateContactClient(Request $request){
+        $query = DB::table("CRM_CLIENT_CONTACTS")
+        ->where("ID", $request->id)
+        ->update([
+           "POSITION" => $request->position,
+           "NAME" => $request->name,
+           "PHONE_NUMBER" => $request->phNumber,
+           "EMAIL" => $request->email,
+           "AUTHOR_ID" => $request->authorId,
+           "ACTUAL" => $request->mainContact,
+           "DESCRIPTION" => $request->description,
+           "MAIN_CONTACT" => $request->mainContact
+        ]);
+        return collect(["message" => "data is updated", "status" => 201]);
+     }
 }

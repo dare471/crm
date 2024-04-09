@@ -15,7 +15,9 @@
         "laravel/sanctum": "^2.12",
         "laravel/tinker": "^2.5",
         "laravel/ui": "^3.3",
-        "nesbot/carbon": "^2.56",
+        "miniorange/saml-laravel-free": "^2.3",
+        "nesbot/carbon": "^2.67.0",
+        "proj4php/proj4php": "^2.0",
         "pusher/pusher-php-server": "^7.2",
         "symfony/dom-crawler": "^5.4",
         "tymon/jwt-auth": "^1.0"

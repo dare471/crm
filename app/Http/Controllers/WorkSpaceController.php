@@ -1,7 +1,8 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\clientLRegion;
 use App\Http\Resources\clientInf;
@@ -12,7 +13,6 @@ use App\Http\Resources\addicionalContract;
 use App\Http\Resources\clientsRFavoriteList;
 use App\Http\Resources\contractHead;
 use App\Http\Resources\getBusinessPoint;
-use App\Http\Resources\GetClientXL;
 use App\Http\Resources\plannedMeeting;
 use App\Http\Resources\getHandbook;
 use App\Http\Resources\specificationContracts;
@@ -22,13 +22,20 @@ use App\Http\Resources\getContracts;
 use App\Http\Resources\getLastContract;
 use App\Http\Resources\getSubcides;
 use App\Http\Resources\getSuppMngr;
+use App\Http\Resources\contactInf;
 use Carbon\Traits\Timestamp;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\PlannedMettingDetail;
+use proj4php\Proj4php;
+use proj4php\Point;
+use proj4php\Proj;
+use App\Http\Controllers\WorkSpaceMobileController;
+
 class WorkSpaceController extends Controller
 {
    use Timestamp;
+
    public function Contracts(Request $request)
    {
       if ($request->type == "managerContracts") {
@@ -181,6 +188,13 @@ class WorkSpaceController extends Controller
             if($request->action == "getDetailMeeting"){
                return $this->plannedMeetingDetailMob($request);
             }
+         case "contactInf":
+            if($request->action == "getContact"){
+               return $this->contactInf($request);
+            }
+            if($request->action == "setContact"){
+               return $this->setContactClient($request);
+            }
          case "plannedMeetingDetail":
             return $this->plannedMeetingDetail($request);
          case "plannedMeetingDetailMob":
@@ -195,8 +209,15 @@ class WorkSpaceController extends Controller
             return $this->profileClient($request);
          case "uploadFile":
             return $this->UploadFiles($request);
+         case "getFileVisit":
+            return $this->getFileVisit($request);
          case "onecVisit":
             return $this->onecVisit($request);
+         case "setCoordinateVisit":
+            return $this->setCoordinateVisit($request);
+         case "searchClient":
+            return $this->searchClient($request);
+            break;
          default:
             return null; // or throw an exception, depending on your needs
       }
@@ -471,16 +492,17 @@ class WorkSpaceController extends Controller
          "message" => "Meeting to save"
       ]);
    }
-   
+   //Mobile api 
    private function plannedMeeting(Request $request){
-     app('App\Http\Controllers\CServiceForOnecController')->getVisit($request->userId);
+     //app('App\Http\Controllers\CServiceForOnecController')->getVisit($request);
       $query = DB::table("CRM_VISIT_TO_DATE as cdtv")
          ->select("cdtv.DATE_TO_VISIT", "cdtv.ID", "CLIENT_ID", "css.NAME", "cdtv.SOURCE")
          ->leftJoin("CRM_SPR_STATUS as css", "css.ID", "cdtv.STATUS")
          ->where("USER_ID", $request->userId)
+         ->orderByDesc("ID")
          ->get();
-         $arr = [];
-         $ar = [];
+         $arr = collect();
+         $ar = collect();
          foreach ($query as $q) {
             $queryDate = $q->DATE_TO_VISIT;
             $clientId = json_decode($q->CLIENT_ID);
@@ -494,28 +516,23 @@ class WorkSpaceController extends Controller
                   ->leftJoin("CRM_SPR_TYPE_MEETING as cstm", "cdtvp.TYPE_MEETING", "cstm.ID")
                   ->select("cdtvp.id as visitId", "cci.ID", "cdtvp.STATUSVISIT as statusVisit",  "cci.NAME", DB::raw("'$queryDate' as dateVisit"), "IIN_BIN", "ADDRESS", "cdtvp.TYPE_VISIT_ID as visitTypeId", "cdtvp.TIME_MEETING as timeMeeting", "cstv.NAME as visitTypeName", "cstm.ID as meetingTypeId", "cstm.NAME as meetingTypeName", "cdtvp.PLOT as plotId")
                   ->where("cdtvp.VISIT_ID", $q->ID)
-                  ->where("cci.ID", $c->CLIENT_ID)
+                  ->where("cci.ID", $clientId)
                   ->limit(1)
                   ->get();
-                  $ar=collect($query);
-               
+                  return $query;
+                  $ar=$query;
             }
-            if($request->view == "listFormat"){
-               $arr = plannedMeeting::collection($ar)->all();
-            }
-            else{
-               array_push(
-                  $arr,
-                  collect([
-                     "id" => (int)$q->ID, "dateToVisit" => $q->DATE_TO_VISIT, "statusVisit" => $q->NAME, "clients" => plannedMeeting::collection($ar)->all()
-                  ])
-            );
-            $ar = array();
-            }
+               $arr->push(collect([
+                  "id" => (int)$q->ID, 
+                  "dateToVisit" => $q->DATE_TO_VISIT, 
+                  "statusVisit" => $q->NAME, 
+                  "clients" => plannedMeeting::collection($ar)->all()
+              ]));
          }
-         return collect($arr)->filter(function($item){
-            return !empty($item['clients']);
-         });
+         return collect($arr)->reject(function($item){
+            return empty($item['clients']);
+          })->values()->toArray();
+   
          //return $this->plannedMeeting($request);
    }
    private function plannedMeetingMob(Request $request){
@@ -698,7 +715,7 @@ class WorkSpaceController extends Controller
       }
       if($request->action == "getHandBookFieldInsp"){
          $query = DB::table("CRM_SPR_FIELD_INSPECTION as csfi")
-         ->select("csfi.id", "csfi.name", "csfi.url as url","csffi.name as categoryName", "csffi.id as categoryId")
+         ->select("csfi.id", "csfi.name", "csfi.url as url", "csfi.linkId", "csffi.name as categoryName", "csffi.id as categoryId")
          ->leftJoin("CRM_SPR_FOR_FIELD_INSPECTION as csffi", "csffi.id", "csfi.category")
          ->get();
          return getHandbook::collection($query)->all();
@@ -789,6 +806,73 @@ class WorkSpaceController extends Controller
          ]);
          break;
       }
+   }
+   private function searchClient($request){
+      $query = DB::table("CRM_CLIENT_INFO as CCI")
+          ->join("CRM_CLIENT_PROPERTIES_4326 AS CCP", "CCP.CLIENT_INFO_ID", "CCI.ID")
+          ->join("CRM_SPR_CULTURE as CSC", "CSC.ID", "CCP.CULTURE")
+          ->select("CCI.ID as clientId", "CCI.NAME as clientName", "CCI.IIN_BIN as clientIin");
+  
+      if($request->clientName){
+          $query->where("CCI.NAME", "LIKE", "%$request->clientName%");
+      }
+  
+      if($request->region){
+          $query->whereIn("CCI.DISTRICT", $request->region);
+      }
+  
+      $result = $query->groupBy("CCI.ID", "CCI.NAME", "CCI.IIN_BIN")->take(10)->get();
+  
+      return response($result);
+   }
+   private function contactInf(Request $request){
+      $contact = DB::table("CRM_CLIENT_CONTACTS")
+      ->where("CLIENT_ID", $request->clientId)
+      ->whereNotNull("PHONE_NUMBER")
+      ->get();
+      $collect = $contact->map(function($item) {
+          return collect($item)->filter(function($value, $key) {
+              return $key !== 'PHONE_NUMBER' || $value !== null;
+          })->toArray();
+      });
+      return contactInf::collection($contact)->all();
+   }
+   private function setContactClient(Request $request){
+      $otherClass = new WorkSpaceMobileController();
+
+      $query = DB::table("CRM_CLIENT_CONTACTS")
+      ->insertGetId([
+         "POSITION" => $request->position,
+         "CLIENT_ID" => $request->clientId,
+         "NAME" => $request->name, 
+         "PHONE_NUMBER" => $request->phNumber,
+         "EMAIL" => $request->email,
+         "AUTHOR_ID" => $request->userId,
+         "MAIN_CONTACT" => $request->mainC,
+         "DESCRIPTION" => $request->description
+      ]);
+      $otherClass->fetchDataVisit($request, $query);
+      return response()->json([
+         "status" => true,
+         "message" => "sucess",
+         "id" => $query, 
+         "response" => $request // Возвращаем полученный идентификатор
+      ]);
+   }
+   private function updateContactClient(Request $request){
+      $query = DB::table("CRM_CLIENT_CONTACTS")
+      ->where("ID", $request->id)
+      ->update([
+         "POSITION" => $request->position,
+         "NAME" => $request->name,
+         "PHONE_NUMBER" => $request->phNumber,
+         "EMAIL" => $request->email,
+         "AUTHOR" => $request->authorId,
+         "ACTUAL" => $request->mainContact,
+         "DESCRIPTION" => $request->DESCRIPTION,
+         "MAIN_CONTACT" => $request->mainContact
+      ]);
+      return collect(["message" => "data is updated", "status" => 201]);
    }
    //***УДАЛИТЬ */
    //Удалить нужно переписано на ClientAnalyticController от 
@@ -907,6 +991,7 @@ class WorkSpaceController extends Controller
    private function UploadFiles($request){
         // Получаем файл
         $file = $request->file('file');
+       
         // Генерируем уникальное имя для файла
         $filename = uniqid() . '_' . $file->getClientOriginalName();
         $filePath =  '/uploads/' . $filename;
@@ -926,7 +1011,11 @@ class WorkSpaceController extends Controller
          $data = DB::table("CRM_UPLOADS_FILE")
          ->insertGetId([
             "filePath" => $filePath,
-            "type" => $type
+            "type" => $request->subType,
+            "author" => $request->userId,
+            "client" => $request->clientId,
+            "from" => $request->from,
+            "linkElement" => $request->visitId
          ]);
          return response()->json([
             'success' => true,
@@ -935,6 +1024,82 @@ class WorkSpaceController extends Controller
          ], 
          200);
    }
+
+   private function getFileVisit(Request $request){
+      $query = DB::table("CRM_UPLOADS_FILE")
+      ->where("client", $request->clientId)
+      ->get();
+      return collect($query);
+   }
+
+   private function setCoordinateVisit(Request $request)
+   {
+       $mercatorCoords = $this->convertLatLongToMercator($request->latitude, $request->longitude);
+       return $mercatorCoords;
+       $url = 'https://aisgzk.kz/aisgzk/Proxy/aisgzkTopo2/MapServer/identify?f=json&tolerance=1&returnGeometry=true&returnFieldName=false&returnUnformattedValues=false&imageDisplay=625,489,96&geometry={"x":'.$mercatorCoords['x'].',"y":'.$mercatorCoords['y'].'}&geometryType=esriGeometryPoint&sr=3857&mapExtent='.$mercatorCoords['y'].','.$mercatorCoords['y'].','.$mercatorCoords['y'].','.$mercatorCoords['y'].'&layers=all:33,34,38';
+       $context = stream_context_create([
+         'ssl' => [
+            'verify_peer' => false,
+            'verify_peer_name' => false// Замените на путь к корневому сертификату
+         ]
+     ]);
+       $response = file_get_contents($url, false, $context);
+       return collect(json_decode($response));
+       // Process the received response
+   
+       $query = DB::table("CRM_VISIT_TO_COORDINATE")
+           ->insertGetId([
+               "visitId" => $request->visitId,
+               "longitude" => $request->longitude,
+               "latitude" => $request->latitude,
+               "coordinate" => (string)$request->longitude . ", " . $request->latitude,
+               "kadastrNumber" => ''
+           ]);
+   
+       return collect([
+           "message" => "fixedCoordinate",
+           "status" => $query,
+           "utmZone" => $mercatorCoords['utmZone'],
+           "utmLetter" => $mercatorCoords['utmLetter']
+       ]);
+   }
+   
+   private function convertLatLongToMercator($latitude, $longitude)
+   {
+       $earthRadius = 6378137; // Radius of the Earth in meters
+       $originShift = $earthRadius * pi() * 2 / 2; // Offset for the coordinate origin
+   
+       $x = $longitude * $originShift / 180;
+       $y = log(tan((90 + $latitude) * pi() / 360)) / (pi() / 180);
+       $y = $y * $originShift / 180;
+   
+       // Include Proj4
+       $proj4 = new Proj4php();
+   
+       $utmZone = 1 + floor(($longitude + 180) / 6);
+       $utmLetter = $latitude > 0 ? 'N' : 'S';
+   
+       // Define source and target coordinate reference systems
+       $sourceCrs = new Proj('EPSG:3857', $proj4);
+       $targetCrs = new Proj('EPSG:326' . $utmZone, $proj4);
+   
+       // Define the source coordinates
+       $pointSrc = new Point($x, $y, $sourceCrs);
+       $pointDest = $proj4->transform($targetCrs, $pointSrc);
+   
+       // Determine the UTM zone
+   
+       return array(
+           'x' => $x,
+           'y' => $y,
+           'pointSrc' => $pointSrc,
+           'utmZone' => $utmZone,
+           'utmLetter' => $utmLetter
+       );
+   }
+   ///end to coordinate function 
+
+
    private function recomendationSurvey($request){
       $filePath = null;
       // Проверяем наличие файла

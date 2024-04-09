@@ -18,9 +18,9 @@ class getMainInfCli extends JsonResource
     {
         
         $subquery = DB::table("CRM_CLIENT_CONTACTS")
-        ->where("CLIENT_ID", $request->clientId)
+        ->where("CLIENT_ID", $this->CLIENT_ID)
         ->get();
-
+       
         return [
             "id" => (int)$this->ID,
             "address" => $this->ADDRESS,
@@ -31,7 +31,16 @@ class getMainInfCli extends JsonResource
             "activity" => $this->DEYATELNOST,
             "district" => (int)$this->REGION,
             "region" => (int)$this->DISTRICT,
-            "contacts" => getMainInfCliContacts::collection($subquery)->all()
+            "contacts" => getMainInfCliContacts::collection($subquery)->all(),
+            "favorites" => $this->FavoritesStatus($request->userId),
         ];
+    }
+    private function FavoritesStatus($userId){
+        $query = DB::table("CRM_CLIENT_TO_VISIT")
+        ->where("USER_ID", $userId)
+        ->where("CLIENT_ID", $this->ID)
+        ->limit(1)
+        ->get();
+        return count($query) > 0; 
     }
 }

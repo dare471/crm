@@ -40,7 +40,7 @@ class getHandbook extends JsonResource
         }
         else{
             return [
-                "id" => (int)$this->id,
+                "id" => (int)$this->linkId,
                 "name" => $this->name,
                 "url" => $this->url,
                 "category" => $this->categoryName,

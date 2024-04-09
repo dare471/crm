@@ -16,67 +16,47 @@ class PlannedMettingDetail extends JsonResource
      */
     public function toArray($request){
         return [
-            "clientId" => (int)$this->ID,
-            "clientName" => $this->NAME,
+            "visitId" => (int)$this->visitId,
+            "clientId" => (int)$this->clientId,
+            "clientName" => $this->clientName,
             "clientCategory" => trim($this->buisnessCategory, ' '),
             "address" => $this->ADDRESS,
-            "contactInf" => $this->contactInf($this->CLIENT_ID),
+            "contactInf" => $this->contactInf($this->clientId),
             "clientIin" => (int)$this->IIN_BIN,
             "managerId" => (int)$this->managerId,
             "managerName" => $this->managerLinkClient($this->managerId),
-            "startVisit" => $this->STARTVISIT,
-            "finishVisit" => $this->FINISHVISIT,
-            "statusVisit" => (Boolean)$this->STATUSVISIT,
-            "visitTypeId" => (int)$this->TYPE_VISIT_ID,
-            "vistiTypeName" => $this->sprVisit($this->TYPE_VISIT_ID),
-            "meetingTypeId" => (int)$this->TYPE_MEETING,
-            "meetingTypeName" => $this->sprMeeting((int)$this->TYPE_MEETING),
-            "meetingCoordinate" => $this->MEETING_COORDINATE,
+            "startVisit" => $this->startVisit,
+            "finishVisit" => $this->finishVisit,
+            "statusVisit" => (Boolean)$this->statusVisit,
+            "visitTypeId" => (int)$this->visitTypeId,
+            "vistiTypeName" => $this->sprVisit($this->visitTypeId),
+            "meetingTypeId" => (int)$this->meetingTypeId,
+            "meetingTypeName" => $this->sprMeeting((int)$this->meetingTypeId),
+            "meetingCoordinate" => (string)$this->MEETING_COORDINATE,
             "plotId" => (int)$this->PLOT,
             "plotName" => $this->plotSpr($this->PLOT),
-            "summContract" => $this->sumContractsAll($this->CLIENT_ID). " ₸",
-            "summCurrentContractSeason" => $this->sumCurrentSeasonContracts($this->CLIENT_ID). " ₸",
-            "checkContracts" => (boolean)$this->contractList($this->CLIENT_ID),
-            "potentialClientPercent" => $this->potentialClient($this->ID, $this->sumCurrentSeasonContracts($this->CLIENT_ID))."%",
-            "potentialClient" => $this->potentialClient($this->ID, null),
+            "summContract" => $this->sumContractsAll($this->clientId). " ₸",
+            "summCurrentContractSeason" => $this->classificationSum($this->sumCurrentSeasonContracts($this->clientId)). " ₸",
+            "checkContracts" => (boolean)$this->contractList($this->clientId),
+            "potentialClientPercent" => round($this->potentialClient($this->clientId, $this->sumCurrentSeasonContracts($this->clientId)))."%",
+            "potentialClient" => $this->potentialClient($this->clientId, null),
             "subscidesSum" => $this->subcidesSum($this->IIN_BIN)." ₸",
             "checkSubscides" => (boolean)$this->subcidesAll($this->IIN_BIN),
             "duration" => $this->DURATION,
             "distance" => $this->DISTANCE
         ];
     }
-    private function onecVisit($iin){
-        $curl = curl_init();
-        curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://10.200.100.11/erp_alex/hs/erp_api/erp_api/?command=getVisits&is_crm=True',
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_ENCODING => '',
-        CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 0,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_CUSTOMREQUEST => 'POST',
-        CURLOPT_POSTFIELDS =>'{
-            "dataStart":1678803625,
-            "dataEnd":1680704425,
-            "managerGuid ": "6d9f3f35-a650-11eb-af7b-d4f5ef107925"
-        }',
-        CURLOPT_HTTPHEADER => array(
-            'Authorization: Basic dGVsZWdyYW1ib3Q6dk8za3lneW0=',
-            'Content-Type: application/json'
-        ),
-        ));
-
-        $response = curl_exec($curl);
-
-        curl_close($curl);
-        return $response;
-
-    }
     private function contactInf($id){
         $contact = DB::table("CRM_CLIENT_CONTACTS")
-        ->where("CLIENT_ID", 1)
+        ->where("CLIENT_ID", $id)
+        ->whereNotNull("PHONE_NUMBER")
         ->get();
+        $collect = $contact->map(function($item) {
+            return collect($item)->filter(function($value, $key) {
+                return $key !== 'PHONE_NUMBER' || $value !== null;
+            })->toArray();
+        });
+        
         return contactInf::collection($contact)->all();
     }
     private function subcidesAll($iin){
@@ -97,17 +77,18 @@ class PlannedMettingDetail extends JsonResource
             $p = DB::table("CRM_CLIENT_INFO")
             ->where("ID", $id)
             ->value("potential");
-            return $p;
+            return 'Данные отсутсвуют';//$this->classificationSum((int)$p);
         }
         else{
             $p = DB::table("CRM_CLIENT_INFO")
             ->where("ID", $id)
             ->value("potential");
                 if($p == null){
-                    $pt = '100';
+                    $pt = 100;
                 }
                 else{
-                    $pt = $p / $sumcontract * 100;
+                    $pt = ((int)$p / (int)$sumcontract ) * 10;
+                    //$pt = $p;
                 }
             return $pt;
         }
@@ -138,7 +119,8 @@ class PlannedMettingDetail extends JsonResource
         else{
         $sum = DB::table("CRM_DOGOVOR as cd")
             ->leftJoin("CRM_CLIENT_ID_GUID as ccig", "ccig.GUID", "cd.KONTRAGENT_GUID")
-            ->where("ccig.ID", $id)
+            ->leftJoin("CRM_CLIENT_INFO as cci", "cci.CLIENT_ID","ccig.ID")
+            ->where("cci.ID", $id)
             ->sum("SUMMA_KZ_TG");
         return $this->classificationSum((int)$sum);
         }
@@ -150,10 +132,11 @@ class PlannedMettingDetail extends JsonResource
         else{
             $sum = DB::table("CRM_DOGOVOR as cd")
             ->leftJoin("CRM_CLIENT_ID_GUID as ccig", "ccig.GUID", "cd.KONTRAGENT_GUID")
-            ->where("ccig.ID", $id)
+            ->leftJoin("CRM_CLIENT_INFO as cci", "cci.CLIENT_ID","ccig.ID")
+            ->where("cci.ID", $id)
             ->where("cd.SEZON", "Сезон 2023")
             ->sum("SUMMA_KZ_TG");
-            return $this->classificationSum((int)$sum);
+            return (int)$sum;
         }
     }
     private function managerLinkClient($id){

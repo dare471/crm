@@ -15,11 +15,15 @@ class contactInf extends JsonResource
     public function toArray($request)
     {
         return [
-            "id" => $this->ID,
+            "id" => (int)$this->ID,
             "position" => $this->POSITION,
             "name" => $this->NAME,
             "phNumber" => $this->PHONE_NUMBER,
-            "email" => $this->EMAIL
+            "email" => $this->EMAIL,
+            "authorId" => (int)$this->AUTHOR_ID,
+            "actual" => boolval($this->ACTUAL),
+            "description" => $this->DESCRIPTION,
+            "mainContact" => boolval($this->MAIN_CONTACT)
         ];
     }
 }
