@@ -9,6 +9,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 class ClientAuthController extends Controller
 {
+    // авторизация клиента login: email phone bin, Password остается прежним
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -29,8 +30,7 @@ class ClientAuthController extends Controller
         return $this->respondWithToken($token);
     }
     
-    
-
+    //регистрация клиента обязательные параметры
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -52,6 +52,9 @@ class ClientAuthController extends Controller
             'email' => $request->email, // Проверьте, что email действительно передается сюда
             'password' => bcrypt($request->password),
         ]);
+
+        // При регистрации создает запись профиля в таблице app_profile
+        
         Profile::create([
             'client_id' => $client->id
         ]);
@@ -59,6 +62,7 @@ class ClientAuthController extends Controller
         return response()->json(['token' => $token]);
     }
 
+    //Мульти логин для авторизации 
     protected function attemptLogin(Request $request)
     {
         $credentials = $request->only('email', 'phone', 'bin', 'password');
@@ -75,7 +79,7 @@ class ClientAuthController extends Controller
         return false;
     }
     
-
+    // response token
     protected function respondWithToken($token)
     {
         return response()->json([
@@ -84,7 +88,7 @@ class ClientAuthController extends Controller
             'expires_in' => JWTAuth::factory()->getTTL() * 60
         ]);
     }
-
+    // Выдает по токену информацию из модели Client with Profile
     public function userProfile(Request $request)
     {
         try {
