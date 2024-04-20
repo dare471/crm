@@ -14,9 +14,11 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome', ['name' => 'Samantha']);
+    return response()->json([
+        "message" => "Hi, this service works only as an API."
+    ]);
 });
 
 
-$router->group(['prefix' => 'api'], function () use ($router) {
-});
+// $router->group(['prefix' => 'api'], function () use ($router) {
+// });

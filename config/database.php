@@ -83,13 +83,12 @@ return [
             'driver' => 'sqlsrv',
             'host' => '10.200.100.24',
             'port' => '1433',
-            'database' => 'CRM_DWH',
+            'database' => 'mobile_app',
             'username' => 'CRM',
             'password' => "2983523456Dare",
-            'charset' => 'utf8mb4',
+            'charset' => 'utf8',
             'collation' => 'utf8mb4_unicode_ci',
-            
-            'prefix' => '',
+            'prefix' => 'app_',
             'prefix_indexes' => true,
             'strict'    => false,
             
@@ -137,6 +136,20 @@ return [
             'strict'    => false,
         ],
 
+        'L2_X' => [
+            'driver' => 'sqlsrv',
+            'host' => '10.200.100.24',
+            'port' => '1433',
+            'database' => 'L2_X',
+            'username' => 'CRM',
+            'password' => "2983523456Dare",
+            'charset' => 'utf8',
+            'collation' => 'utf8_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict'    => false,
+        ],
+
         'L0' => [
             'driver' => 'sqlsrv',
             'host' => '10.200.100.24',
@@ -155,7 +168,7 @@ return [
             'driver' => 'sqlsrv',
             'host' => '10.200.100.24',
             'port' => '1433',
-            'database' => 'CRM_DWH',
+            'database' => 'CRM_DWH_new',
             'username' => 'CRM',
             'password' => "2983523456Dare",
             'charset' => 'utf8',
@@ -183,12 +196,13 @@ return [
 
         'mongodb' => [
             'driver'   => 'mongodb',
-            'host'     => '10.200.100.26',
+            'host'     => '10.200.101.96',
             'port'     => '27017',
             'database' => "MAPS",
             'username' => "",
             'password' => ""
         ],
+        
         'X_L' => [
             'driver' => 'sqlsrv',
             'host' => '10.200.100.26',
@@ -243,7 +257,7 @@ return [
 
     'redis' => [
 
-        'client' => env('REDIS_CLIENT', 'phpredis'),
+        'client' => env('REDIS_CLIENT', 'predis'),
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),

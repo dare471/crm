@@ -104,15 +104,6 @@ class CServiceForOnecController extends Controller
     public function getVisit($request){
         $trueUser = $this->getTrueGuidUser($request->userId);
         $innertionGuiduser = $this->innertionGuidUser($trueUser->GUID);
-        //return collect(["sss" => trim($innertionGuiduser->BinaryGUID, ' ')]);
-        // $userGuid = DB::table("users as u")
-        // ->select(DB::raw("CONVERT(NVARCHAR(MAX), cu.GUID, 1) as GUID"))
-        // ->leftJoin("CRM_USERS as cu", "cu.ADRES_E_P", "u.email")
-        // ->leftJoin("CRM_DOGOVOR as cd", "cd.MENEDZHER_GUID", "cu.GUID")
-        // ->where("u.ID", $request)
-        // ->limit(1)
-        // ->value("cu.GUID");
-      //  return $userGuid;
         $curl = curl_init();
         curl_setopt_array($curl, array(
         CURLOPT_URL => "http://10.200.100.12/erpkz/hs/erp_api/erp_api/?command=getVisits&guid_user=".$trueUser->GUID."",
@@ -177,53 +168,14 @@ class CServiceForOnecController extends Controller
                 }
          });
     }
-    public function setVisitToOneC($request){
-        $response = $this->oneC->request("POST", "?command=getVisits&is_crm=True", ['json' => [
-            '{
-                "list_visit": [
-                        {
-                            "fullDay": "false",
-                            "address": "УЛИЦА СТЕПНАЯ, дом 6, кв.1",
-                            "managerGuid": "9147f314-36a3-11e6-80de-000c29e67b2e",
-                            "factDateToVisitFinish": 1680258716,
-                            "factDateToVisitStart": 1680258716,
-                            "clients": [
-                                {
-                                    "clientIin": "030340007220",
-                                    "clientName": "ТОО \"Агро-фирма Желкуар 2003\"",
-                                    "guid1C": "1923bf1b-2f43-11e9-811d-000c29ef79ca",
-                                    "clientId": 0
-                                }
-                            ],
-                            "resultText1С": "Встреча завершене заключением договора",
-                            "resultTextCRM": "Результат введенный в CRM",
-                            "resultDataJSON": "JSON результата CRM",
-                            "description": "краткое описание / план встречи",
-                            "planeDateToVisitFinish": 1680255956,
-                            "visitName": "Переговоры заключения договора + и чего то еще",
-                            "targetGUID": "50dd55ee-c6c1-11ed-bfe3-b8cb29f95123",
-                            "statusVisit": 3,
-                            "planeDateToVisitStart": 1680255931,
-                            "dateCreate": 1680577200,
-                            "authorGuid": "9147f314-36a3-11e6-80de-000c29e67b2e",
-                            "guid": "efaedd1b-c9f1-11ed-bfe3-b8cb29f95123",
-                            "idCRM": 122222
-                        },
-                    ]
-                }'
-        ]]);
-            if ($response->getStatusCode() == 200) {
-                return collect(["data" => $data = json_decode($response->getBody(), true), "status" => 200]);
-            } else {
-                return null;
-            }    
-    }
+
     public function getTypeVisit($name){
         $query = DB::table("CRM_SPR_TYPE_VISIT")
         ->where("synonymOneC", $name)
         ->value("ID");
         return $query;
     }
+
     public function getUserGuid($userGUID){
         $userGuid = DB::table("users as u")
         // ->select(DB::raw("CONVERT(NVARCHAR(MAX), cu.GUID, 1) as GUID"))
@@ -233,6 +185,7 @@ class CServiceForOnecController extends Controller
         ->value("u.ID");
         return $userGuid;
     }
+
     public function getClientIdWithGuid($clientiin){
         $clientInf = DB::table("CRM_CLIENT_ID_GUID as ccig")
         // ->select(DB::raw("CONVERT(NVARCHAR(MAX), ccig.GUID, 1) as GUID"))
@@ -250,6 +203,7 @@ class CServiceForOnecController extends Controller
         //return $clientInf;
         return $clientInf;
     }
+
     private function getMyVacation(Request $request){
         $telegramId=$this->getTelegramUser($request->userId);
         $response = $this->oneC->request("POST", "?command=$request->action&id_telegram=$telegramId");
@@ -259,6 +213,7 @@ class CServiceForOnecController extends Controller
         $response->header('Content-Disposition', 'attachment; filename=file.pdf'); 
         return $response;
     }
+
     private function getUserCertWork(Request $request){
         $telegramId=$this->getTelegramUser($request->userId);
         $response = $this->oneC->request("POST", "?command=$request->action&id_telegram=$telegramId");
@@ -268,6 +223,7 @@ class CServiceForOnecController extends Controller
         $response->header('Content-Disposition', 'attachment; filename=file.pdf'); 
         return $response;
     }
+
     private function getMyAuto(Request $request){
         if($request->userId == 1174){
             $telegramId=$this->getTelegramUser(1512);
@@ -295,6 +251,7 @@ class CServiceForOnecController extends Controller
              return collect(["message" => "get correct property"]);
          }
     }
+
     private function setNeedOil(Request $request){
         if($request->userId == 1174){
             $telegramId=$this->getTelegramUser(1512);
@@ -329,6 +286,7 @@ class CServiceForOnecController extends Controller
         }
         
     }
+
     private function setOdometerAuto(Request $request){
         $files = $request->file('files');
         $arrFiles = collect([]);
@@ -388,6 +346,7 @@ class CServiceForOnecController extends Controller
             return collect(["message" => "get correct property"]);
         }
     }
+
     private function getTaskByGuid(Request $request){
         $telegramId=$this->getTelegramUser($request->userId);
         $response = $this->oneC->request("POST", "?command=$request->action&id_telegram=$telegramId", ['json' => [
@@ -402,6 +361,7 @@ class CServiceForOnecController extends Controller
             return collect(["message" => "get correct property"]);
         }
     }
+
     private function getFile(Request $request){
         $telegramId=$this->getTelegramUser($request->userId);
         $response = $this->oneC->request("POST", "?command=$request->action&id_telegram=$telegramId", ["json" =>[
@@ -418,6 +378,7 @@ class CServiceForOnecController extends Controller
         $response->header('Content-Disposition', 'attachment; filename=file.pdf'); 
         return $response;
     }
+
     private function setResultTask(Request $request){
         $telegramId=$this->getTelegramUser($request->userId);
         if($request->answer == true || $request->index == true){
@@ -445,6 +406,7 @@ class CServiceForOnecController extends Controller
             return collect(["message" => "get correct property"]);
         }
     }
+
     private function getAutoByNumber(Request $request){
         $telegramId=$this->getTelegramUser($request->userId);
         $response = $this->oneC->request("POST", "?command=$request->action&id_telegram=$telegramId", ['json' => [
@@ -474,6 +436,7 @@ class CServiceForOnecController extends Controller
         ->value("u.GUID");
         return $userGuid;
     }
+    
     private function getTrueGuidUser($id){
         $query = DB::table("users as u")
         ->select(DB::raw('CONVERT(nvarchar(max), GUID, 1)'))

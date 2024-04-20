@@ -46,6 +46,13 @@ return [
             'provider' => 'users',
             'hash' => false,
         ],
+
+        'client' => [  // Новая гвардия для клиентов
+            'driver' => 'jwt',
+            'provider' => 'client',  // Обновлено для согласованности
+            'hash' => false,
+        ],
+
     ],
 
     /*
@@ -68,9 +75,12 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => App\Models\User::class,
+            'model' => App\Models\users\Users::class,
         ],
-
+        'client' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\ClientAuth::class,
+        ],
         // 'users' => [
         //     'driver' => 'database',
         //     'table' => 'users',
@@ -96,8 +106,8 @@ return [
         'users' => [
             'provider' => 'users',
             'table' => 'password_resets',
-            'expire' => 60,
-            'throttle' => 60,
+            'expire' => 120,
+            'throttle' => 120,
         ],
     ],
 

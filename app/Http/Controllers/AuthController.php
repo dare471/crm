@@ -2,148 +2,96 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB; 
 use Illuminate\Http\Request;
-use App\Models\User;
-use Illuminate\Support\Facades\Auth;
-/* use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Cookie;
-use Symfony\Component\HttpFoundation\Response; */
+use App\Models\users\Users;
 use Illuminate\Support\Facades\Validator;
-
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth:api', ['except' =>['login', 'register']]);
-    }
-
-    public function login(Request $request) 
+    public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email',
-            'password' => 'required|string|min:3',
+            'email' => 'sometimes|required_without_all:phone,bin|email',
+            'phone' => 'sometimes|required_without_all:email,bin',
+            'bin' => 'sometimes|required_without_all:email,phone',
+            'password' => 'required|string|min:6',
         ]);
-
-        if($validator->fails()) 
-        {
+    
+        if ($validator->fails()) {
             return response()->json($validator->errors(), 400);
         }
-        $token_validity = (24*60); //24ч*60м
-
-        $this->guard()->factory()->setTTL($token_validity);
-
-        if(!$token = $this->guard()->attempt($validator->validated())) 
-        {
-            return response()->json(['status' => false ,'error' => 'Не авторизован!'], 401);
+    
+        if (!$token = $this->attemptLogin($request)) {
+            return response()->json(['error' => 'Unauthorized'], 401);
         }
-
-        return $this->respondWithToken($token); 
+    
+        return $this->respondWithToken($token);
     }
+    
+    
 
-    public function register(Request $request) 
+    public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|between:2,100',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6',
+            'name' => 'required|string|max:255',
+            'bin' => 'required|string|unique:users',  // Убедитесь, что это правильная таблица
+            'phone' => 'required|string|max:16',
+            'email' => 'required|email|unique:users|min:6',  // Проверка на уникальность email
+            'password' => 'required|string|min:6|confirmed',
         ]);
 
-        if ($validator->fails()) 
-        {
-            return response()->json([$validator->errors()], 422);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 400);
         }
 
-        $user = User::create(
-            array_merge($validator->validated(), ['password' => bcrypt($request->password)])
-        );
-        $token_validity = (12*0.5); //24ч*60м
+        $user = Users::create([
+            'name' => $request->name,
+            'bin' => $request->bin,
+            'phone' => $request->phone,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+        ]);
 
-        $this->guard()->factory()->setTTL($token_validity);
-        if(!$token = $this->guard()->attempt($validator->validated())) 
-        {
-            return response()->json(['status' => false ,'error' => 'Не авторизован!'], 401);
+        $token = JWTAuth::fromUser($user);
+
+        return response()->json(['token' => $token, 'message' => 'User successfully registered']);
+    }
+
+
+    protected function attemptLogin(Request $request)
+    {
+        $credentials = $request->only('email', 'phone', 'bin', 'password');
+    
+        foreach (['email', 'phone', 'bin'] as $field) {
+            if (!empty($credentials[$field])) {
+                // Указываем использование новой гвардии client_api
+                if ($token = auth('api')->attempt([$field => $credentials[$field], 'password' => $credentials['password']])) {
+                    return $token;
+                }
+            }
         }
-        return response()->json(['message' => 'Пользователь успешно создан!', 'user' => $user, 'jwt_token' => $this->shortifnT($token) ]);
+    
+        return false;
     }
+    
 
-
-    public function logout() 
-    {
-        $this->guard()->logout();
-        return response()->json(['message' => 'Пользователь успешно вышел из аккаунта!' ]);
-    }
-
-
-    public function profile() 
-    {
-        return response()->json($this->guard()->user());
-    }
-
-
-    public function refresh() 
-    {
-        return $this->respondWithToken($this->guard()->refresh());
-    }
-
-    protected function shortifnT($token) 
+    protected function respondWithToken($token)
     {
         return response()->json([
-            'token_user'=>['users_id'=>$this->guard()->user()->id,
-            'email'=>$this->guard()->user()->email,
-            'name'=>$this->guard()->user()->name,
-            'access_availability'=>json_decode($this->guard()->user()->access_availability),
-            'active'=>$this->guard()->user()->active,
-            'subscribesRegion'=>$this->guard()->user()->region_belongs,
-            'unFollowClients'=>$this->guard()->user()->unfollowClient,
-            'work_position'=>$this->guard()->user()->work_position,
-            'status'=> true,
-            'token' => $token,
+            'access_token' => $token,
             'token_type' => 'bearer',
-            'token_validity' => ($this->guard()->factory()->getTTL() * 1),
-            ]]);
-    }
-
-
-    protected function respondWithToken($token) 
-    {
-        $arr=array();
-        $query = DB::table("CRM_CLIENT_TO_VISIT")
-        ->select("CLIENT_ID")
-        ->where("USER_ID", $this->guard()->user()->id)
-        ->get();
-        foreach($query as $q){
-            array_push($arr, (int)$q->CLIENT_ID);
-        }
-        $tg = DB::table("CRM_USERS as cu")
-        ->leftJoin("users as ss", "ss.email", "cu.ADRES_E_P")
-        ->where("ss.ID", $this->guard()->user()->id)
-        ->value("TELEGRAM_ID");
-
-        return response()->json([
-            'user'=>['id'=>$this->guard()->user()->id,
-            'email'=>$this->guard()->user()->email,
-            'name'=>$this->guard()->user()->name,
-            'access_availability'=>json_decode($this->guard()->user()->access_availability),
-            "version" => (float)"0.1",
-            "telegramId" => $tg,
-            'workPosition'=>'null',
-            'active'=>(int)$this->guard()->user()->activated,
-            'unFollowClients'=>json_decode($this->guard()->user()->unfollowClient)->clientId,
-            'favoriteClients' => $arr,
-            'subscribesRegion'=>json_decode($this->guard()->user()->region_belongs)->region
-        ],
-            'status'=> true,
-            'token' => $token,
-            'token_type' => 'bearer',
-            'token_validity' => ($this->guard()->factory()->getTTL() * 1),
+            'expires_in' => JWTAuth::factory()->getTTL() * 60
         ]);
     }
 
-
-    protected function guard() 
+    public function userProfile(Request $request)
     {
-        return Auth::guard();
+        try {
+            $user = JWTAuth::parseToken()->authenticate();
+            return response()->json(['user' => $user]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'user_not_found'], 404);
+        }
     }
 }

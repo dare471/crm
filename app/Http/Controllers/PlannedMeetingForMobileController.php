@@ -7,8 +7,12 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Resources\PlannedMeetingMobileList;
 use App\Http\Resources\PlannedMettingDetail;
+use App\Http\Resources\PlannedMeetingClientProfile;
 use App\Jobs\ProcessSerializeForVisitAnswer;
+use App\Http\Resources\SmartSearch;
 use Illuminate\Support\Carbon;
+
+use function PHPUnit\Framework\isEmpty;
 
 class PlannedMeetingForMobileController extends Controller
 {
@@ -20,6 +24,14 @@ class PlannedMeetingForMobileController extends Controller
                 switch ($action) {
                     case 'getMeetings':
                         return $this->getMeeting($request);
+                    case 'searchClient':
+                        return $this->searchClient($request);
+                    case 'searchSmartClient':
+                        return $this->searchSmartClient($request);
+                    case 'countClientToday':
+                        return $this->countClient($request); 
+                    case 'getMeetingsToday':
+                        return $this->getMeetingToday($request);
                     case 'setMeeting':
                         return $this->setMeeting($request);
                     case 'updateMeeting':
@@ -36,6 +48,8 @@ class PlannedMeetingForMobileController extends Controller
                         return $this->setCoordinateVisit($request);
                     case "fixedSurvey": 
                         return $this->fixedSurvey($request);
+                    case "cancelMeeting": 
+                        return $this->cancelViisit($request);
                     default:
                         return response()->json(['message' => 'Invalid action'], 400);
                 }
@@ -62,19 +76,26 @@ class PlannedMeetingForMobileController extends Controller
             ]);
             return collect(['message' => true]);
     }
+
     private function setMeeting($request) {
         try {
             
             DB::transaction(function () use ($request) {
                 $dateToVisit = $request->input('dateToVisit');
+                $dateToStart = $request->input('dateToStart');
+                $dateToFinish = $request->input('dateToFinish');
                 $visitData = [
                     "USER_ID" => $request->input('userId'),
                     "CLIENT_ID" => $request->input('clientId'),
-                    "DATE_TO_VISIT" =>DB::raw("CONVERT(datetime, '{$dateToVisit}', 121)"),
+                    "DATE_TO_VISIT" => DB::raw("CONVERT(datetime, '{$dateToVisit}', 121)"),
+                    "START_TO_VISIT" => DB::raw("CONVERT(datetime, '{$dateToStart}', 121)"),
+                    "FINISH_TO_VISIT" => DB::raw("CONVERT(datetime, '{$dateToFinish}', 121)"),
                     "SOURCE" => 0,
-                    "TARGET_DESCRIPTION" => $request->input('description')
+                    "PLACE_DESCRIPTION" => $request->input('placeDescription'),
+                    "TARGET_DESCRIPTION" => $request->input('targetDescription'),
+                    "IS_ALL_DAY" => $request->input('isAllDay')
                 ];
-    
+                
                 $visitId = DB::table("CRM_VISIT_TO_DATE")
                     ->insertGetId($visitData);
                 
@@ -112,15 +133,39 @@ class PlannedMeetingForMobileController extends Controller
             return response()->json(['error' => $e->getMessage()],  500);
         }
     }
+
     private function getMeeting($request){
         $query = DB::table("CRM_VISIT_TO_DATE as cdtv")
-        ->select("cdtv.DATE_TO_VISIT", "cdtv.ID", "CLIENT_ID", "css.NAME", "cdtv.STATUS", "cdtv.SOURCE", "cdtv.TARGET_DESCRIPTION")
+        ->select("cdtv.DATE_TO_VISIT", "cdtv.START_TO_VISIT",  "cdtv.FINISH_TO_VISIT", "cdtv.IS_ALL_DAY", "cdtv.ID", "CLIENT_ID", "css.NAME", "cdtv.STATUS", "cdtv.SOURCE", "cdtv.TARGET_DESCRIPTION", "cdtv.PLACE_DESCRIPTION", "cdtv.NOTES")
         ->leftJoin("CRM_SPR_STATUS as css", "css.ID", "cdtv.STATUS")
         ->where("USER_ID", $request->userId)
         ->orderByDesc("ID")
         ->get();
       return PlannedMeetingMobileList::collection($query)->all();
     }
+   
+    private function getMeetingToday($request){
+        $today = Carbon::today(); // Get the current date without time
+        $query = DB::table("CRM_VISIT_TO_DATE as cdtv")
+            ->select("cdtv.DATE_TO_VISIT", "cdtv.START_TO_VISIT",  "cdtv.FINISH_TO_VISIT", "cdtv.IS_ALL_DAY", "cdtv.ID", "CLIENT_ID", "css.NAME", "cdtv.STATUS", "cdtv.SOURCE", "cdtv.TARGET_DESCRIPTION", "cdtv.PLACE_DESCRIPTION", "cdtv.NOTES")
+            ->leftJoin("CRM_SPR_STATUS as css", "css.ID", "cdtv.STATUS")
+            ->where("USER_ID", $request->userId)
+            ->whereDate("cdtv.DATE_TO_VISIT", $today) // Compare only the date part
+            ->orderByDesc("ID")
+            ->get();   
+            return PlannedMeetingMobileList::collection($query)->all();
+    }
+
+    private function countClient($request){
+        $query = DB::table("CRM_VISIT_TO_DATE")
+        ->where("USER_ID", $request->userId)
+        ->count();
+        return response()->json([[
+                "countVisit" => $query
+                ]]
+        );
+    }
+
     private function getMeetingDetail($request){
       $queryClient = DB::table("CRM_VISIT_TO_DATE as cvtd")
       ->select("cvtd.ID as visitId", "cvtd.USER_ID as userId", "cvtd.CREATE_DATE as createDate", 
@@ -157,6 +202,7 @@ class PlannedMeetingForMobileController extends Controller
             return $item;
          })->first();
     }
+
     private function updateMeeting($request){
         $query = DB::table("CRM_VISIT_TO_DATE")
         ->where("ID", $request->visitId)
@@ -242,6 +288,12 @@ class PlannedMeetingForMobileController extends Controller
                 "recomendationId" => json_encode($request->recomendation),
                 "recomendation" => $request->recomendation,
             ]);
+    }
+    private function cancelViisit($request){
+        $query = DB::table("CRM_VISIT_TO_DATE")
+        ->where("ID", $request->visitId)
+        ->update(["STATUS" => 2]);
+        return response()->json(["message" => "visit canceled"]);
     }
     private function serializeAnswerVisit($data){
       
@@ -354,5 +406,63 @@ class PlannedMeetingForMobileController extends Controller
         }, []);
     
         return $result;
-    }    
+    }
+    private function searchClient($request) {
+        try {
+            $query = DB::connection("mongodb")->table("searchClient")
+                    ->select("id", "name", "iinBin", "address", "buisnessCategory", "activity", "cato", "contactInf", "visits")
+                    ->project(['_id' => 0]);
+    
+            // Определение типа поиска
+            if (!empty($request->clientId)) {
+                // Поиск по идентификатору
+                $query->where('iinBin', 'like', "%{$request->clientId}%");
+            } elseif(!empty($request->clientName)) {
+                // Поиск по наименованию
+                $query->where('name', 'like', "%{$request->clientName}%");
+            }
+    
+            return $query->get();
+        } catch (\Exception $e) {
+            // Обработка ошибки
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+    // private function searchSmartClient($request){
+    //     $query = DB::table("CRM_CLIENT_INFO as CCI")
+    //      //  ->join("CRM_CLIENT_PROPERTIES_4326 AS CCP", "CCP.CLIENT_INFO_ID", "CCI.ID")
+    //     //    ->join("CRM_SPR_CULTURE as CSC", "CSC.ID", "CCP.CULTURE")
+    //         ->select("CCI.ID as clientId", "CCI.NAME as clientName", "CCI.IIN_BIN as iinBin");
+    
+    //     if($request->clientName){
+    //         $query->where("CCI.NAME", "LIKE", "%$request->clientName%");
+    //     }
+
+    //     if($request->clientIin){
+    //         $query->where("CCI.IIN_BIN", "LIKE", "$request->clientIin%");
+    //     }
+    
+    //     $result = $query->groupBy("CCI.ID", "CCI.NAME", "CCI.IIN_BIN")->get();
+        
+    //     return SmartSearch::collection($result)->all();
+    // }
+    private function searchSmartClient($request){
+        try {
+            $query = DB::connection("mongodb")->table("searchClient")
+                    ->select("id", "name", "iinBin", "address", "buisnessCategory", "activity", "cato", "contactInf", "visits")
+                    ->project(['_id' => 0]);
+            // Определение типа поиска
+            if (!empty($request->clientId)) {
+                // Поиск по идентификатору
+                $query->where('iinBin', 'like', "%{$request->clientId}%");
+            } elseif(!empty($request->clientName)) {
+                // Поиск по наименованию
+                $query->where('name', 'like', "%{$request->clientName}%");
+            }
+            return $query->get();
+        } catch (\Exception $e) {
+            // Обработка ошибки
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
 }

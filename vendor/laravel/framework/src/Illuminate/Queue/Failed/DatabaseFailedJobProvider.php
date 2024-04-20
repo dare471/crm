@@ -5,7 +5,7 @@ namespace Illuminate\Queue\Failed;
 use DateTimeInterface;
 use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Support\Facades\Date;
-
+use Carbon\Carbon;
 class DatabaseFailedJobProvider implements FailedJobProviderInterface, PrunableFailedJobProvider
 {
     /**
@@ -55,7 +55,7 @@ class DatabaseFailedJobProvider implements FailedJobProviderInterface, PrunableF
      */
     public function log($connection, $queue, $payload, $exception)
     {
-        $failed_at = Date::now();
+        $failed_at = Carbon::now()->getTimestamp();
 
         $exception = (string) $exception;
 

@@ -9,6 +9,33 @@ use proj4php\Proj4php;
 
 class Proj4phpTest extends TestCase
 {
+
+
+    public function testEPSG3418()
+    {
+
+        $proj4 = new Proj4php();
+        $progWGS84  = new Proj('WGS84', $proj4);
+        $proj3418 = new Proj(
+            'PROJCS["NAD_1983_StatePlane_Iowa_South_FIPS_1402_Feet",GEOGCS["GCS_North_American_1983",DATUM["D_North_American_1983",SPHEROID["GRS_1980",6378137.0,298.257222101]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]],PROJECTION["Lambert_Conformal_Conic"],PARAMETER["False_Easting",1640416.6667],PARAMETER["False_Northing",0.0],PARAMETER["Central_Meridian",-93.5],PARAMETER["Standard_Parallel_1",41.7833333333333],PARAMETER["Standard_Parallel_2",40.6166666666667],PARAMETER["Latitude_Of_Origin",40.0],UNIT["US survey foot",0.304800609601219]]',
+            $proj4
+        );
+        $pointSrc = new Point(1623863.8131117225, 643763.90620113909);
+        $pointDest = $proj4->transform($proj3418, $progWGS84, $pointSrc);
+        $this->assertEqualsWithDelta(-93.560676, $pointDest->x, 0001);
+        $this->assertEqualsWithDelta(41.766901, $pointDest->y, .0001);
+
+
+
+	    $proj4 = new Proj4php();
+        $progWGS84  = new Proj('WGS84', $proj4);
+        $proj3418 = new Proj('+proj=lcc +lat_0=40 +lon_0=-93.5 +lat_1=41.7833333333333 +lat_2=40.6166666666667 +x_0=500000.00001016 +y_0=0 +datum=NAD83 +units=us-ft +no_defs +type=crs',$proj4);
+        $pointSrc = new Point( 1623863.8131117225, 643763.90620113909);
+        $pointDest = $proj4->transform($proj3418, $progWGS84, $pointSrc);
+        $this->assertEqualsWithDelta(-93.560676, $pointDest->x, 0001);
+        $this->assertEqualsWithDelta(41.766901, $pointDest->y, .0001);
+
+    }
     public function testIssue87()
     {
         $this->expectNotToPerformAssertions();
@@ -292,13 +319,17 @@ class Proj4phpTest extends TestCase
     {
         Proj4php::setDebug(false);
 
-	$proj4           = new Proj4php();
-	$projWGS84       = new Proj('EPSG:4326', $proj4);
+        $proj4           = new Proj4php();
+        $projWGS84       = new Proj('EPSG:4326', $proj4);
 
-	$projETRS89      = new Proj('PROJCS["ETRS89_UTM_zone_32N", GEOGCS["GCS_ETRS89", DATUM["D_ETRS_1989", SPHEROID["GRS_1980", 6378137.0, 298.257222101]], PRIMEM["Greenwich", 0.0], UNIT["degree", 0.017453292519943295], AXIS["Longitude", EAST], AXIS["Latitude", NORTH]], PROJECTION["Transverse_Mercator"], PARAMETER["central_meridian", 9.0], PARAMETER["latitude_of_origin", 0.0], PARAMETER["scale_factor", 0.9996], PARAMETER["false_easting", 500000.0], PARAMETER["false_northing", 0.0], UNIT["m", 1.0], AXIS["x", EAST], AXIS["y", NORTH]]',$proj4);
+        $projETRS89      = new Proj('PROJCS["ETRS89_UTM_zone_32N", GEOGCS["GCS_ETRS89", DATUM["D_ETRS_1989", SPHEROID["GRS_1980", 6378137.0, 298.257222101]], PRIMEM["Greenwich", 0.0], UNIT["degree", 0.017453292519943295], AXIS["Longitude", EAST], AXIS["Latitude", NORTH]], PROJECTION["Transverse_Mercator"], PARAMETER["central_meridian", 9.0], PARAMETER["latitude_of_origin", 0.0], PARAMETER["scale_factor", 0.9996], PARAMETER["false_easting", 500000.0], PARAMETER["false_northing", 0.0], UNIT["m", 1.0], AXIS["x", EAST], AXIS["y", NORTH]]',$proj4);
 
         $pointWGS84 = new Point(-96,28.5,  $projWGS84);
         $pointETRS89 = $proj4->transform($projETRS89,$pointWGS84);
+
+        // TODO assert expected values here
+        $this->assertTrue(true);
+        
     }
 
     public function testInlineProjectionMethod2()
@@ -452,5 +483,20 @@ class Proj4phpTest extends TestCase
         $pointMinTr = $proj4->transform($projFROM, $projTO, $pointMin);
 
         $this->assertEqualsWithDelta(array(1508344.3777571, 5032839.2985009), array($pointMinTr->x, $pointMinTr->y), 0.0001);
+    }
+
+
+
+    public function testMercatorAuxiliarySphere()
+    {
+        $proj4 = new Proj4php();
+
+        $projFROM = new Proj('PROJCS["WGS_1984_Web_Mercator_Auxiliary_Sphere", GEOGCS["GCS_WGS_1984", DATUM["D_WGS_1984", SPHEROID["WGS_1984", 6378137, 298.257223563]], PRIMEM["Greenwich", 0], UNIT["Degree", 0.0174532925199433]], PROJECTION["Mercator_Auxiliary_Sphere"], PARAMETER["False_Easting", 0], PARAMETER["False_Northing", 0], PARAMETER["Central_Meridian", 0], PARAMETER["Standard_Parallel_1", 0], PARAMETER["Auxiliary_Sphere_Type", 0], UNIT["Meter", 1]]', $proj4);
+        //$this->fail(print_r($projTO, true));
+        $projTO = new Proj('GOOGLE', $proj4);
+        $pointSource = new Point(16063634.897567, -4598958.4183454);
+        $pointDest = $proj4->transform($projFROM, $projTO, $pointSource);
+
+        $this->assertEqualsWithDelta(array($pointDest->x, $pointDest->y), array($pointDest->x, $pointDest->y), 0.0001);
     }
 }

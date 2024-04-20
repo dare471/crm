@@ -29,7 +29,7 @@ class UserSettingsController extends Controller
         }
         if($request->settings == "getLastPlanPayment"){
             if($request->userId == 1174){
-                $userId = 1491;
+                $userId = 1487;
             }
             else{
                 $userId = $request->userId;
