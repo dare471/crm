@@ -88,7 +88,7 @@ class ClientAuthController extends Controller
             'expires_in' => JWTAuth::factory()->getTTL() * 60
         ]);
     }
-    // Выдает по токену информацию из модели ClientProfile
+    // Выдает по токену информацию из модели Client with Profile
     public function userProfile(Request $request)
     {
         try {
