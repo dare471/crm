@@ -757,7 +757,7 @@ class ComposerStaticInite2345f660dc3b5c0f2799c54029eefa1
         'App\\Exceptions\\Handler' => __DIR__ . '/../..' . '/app/Exceptions/Handler.php',
         'App\\Http\\Controllers\\AuthController' => __DIR__ . '/../..' . '/app/Http/Controllers/AuthController.php',
         'App\\Http\\Controllers\\CServiceForOnecController' => __DIR__ . '/../..' . '/app/Http/Controllers/CServiceForOnecController.php',
-        'App\\Http\\Controllers\\ClientAuthController' => __DIR__ . '/../..' . '/app/Http/Controllers/ClientAuthController.php',
+        'App\\Http\\Controllers\\ClientAuthController' => __DIR__ . '/../..' . '/app/Http/Controllers/client/ClientAuthController.php',
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
         'App\\Http\\Controllers\\MapsAnalyticsController' => __DIR__ . '/../..' . '/app/Http/Controllers/MapsAnalyticsController.php',
         'App\\Http\\Controllers\\PlannedMeetingForMobileController' => __DIR__ . '/../..' . '/app/Http/Controllers/PlannedMeetingForMobileController.php',

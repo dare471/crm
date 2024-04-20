@@ -159,7 +159,7 @@ return array(
     'App\\Exceptions\\Handler' => $baseDir . '/app/Exceptions/Handler.php',
     'App\\Http\\Controllers\\AuthController' => $baseDir . '/app/Http/Controllers/AuthController.php',
     'App\\Http\\Controllers\\CServiceForOnecController' => $baseDir . '/app/Http/Controllers/CServiceForOnecController.php',
-    'App\\Http\\Controllers\\ClientAuthController' => $baseDir . '/app/Http/Controllers/ClientAuthController.php',
+    'App\\Http\\Controllers\\ClientAuthController' => $baseDir . '/app/Http/Controllers/client/ClientAuthController.php',
     'App\\Http\\Controllers\\Controller' => $baseDir . '/app/Http/Controllers/Controller.php',
     'App\\Http\\Controllers\\MapsAnalyticsController' => $baseDir . '/app/Http/Controllers/MapsAnalyticsController.php',
     'App\\Http\\Controllers\\PlannedMeetingForMobileController' => $baseDir . '/app/Http/Controllers/PlannedMeetingForMobileController.php',
